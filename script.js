@@ -683,8 +683,12 @@ function displayRides(rides) {
                 </div>
                 
                 <div class="card-actions">
-                    <a href="mailto:${ride['Email']}" class="contact-btn">✉️ Contact</a>
-                    ${ride['Phone'] ? `<a href="tel:${ride['Phone']}" class="contact-btn phone-btn">📞 Call</a>` : ''}
+                    ${ride['Phone'] ? `
+                        <a href="mailto:${ride['Email']}" class="contact-btn">✉️ Email</a>
+                        <a href="sms:${ride['Phone']}" class="contact-btn phone-btn">💬 Text</a>
+                    ` : `
+                        <a href="mailto:${ride['Email']}" class="contact-btn contact-btn-full">✉️ Contact</a>
+                    `}
                 </div>
             </div>
         `;
