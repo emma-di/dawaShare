@@ -32,14 +32,18 @@
     <!-- Popup Modal Form -->
     <div id="formModal" class="modal">
         <div class="modal-content">
-            <button class="close-btn" id="closeBtn">&times;</button>
-            
-            <div class="form-header">
-                <h2>Share Your Ride Info</h2>
-                <p>Help fellow Stanford students find carpool matches</p>
+            <!-- Sticky Header with Gradient -->
+            <div class="modal-header-sticky">
+                <div class="form-header">
+                    <h2>Share Your Ride Info</h2>
+                    <p>Help fellow Stanford students find carpool matches</p>
+                </div>
+                <button class="close-btn" id="closeBtn">&times;</button>
             </div>
 
-            <form id="rideForm">
+            <!-- Scrollable Form Content -->
+            <div class="modal-body">
+                <form id="rideForm">
                 <!-- Personal Info Section -->
                 <div class="form-section">
                     <div class="form-row">
@@ -164,6 +168,8 @@
                     <button type="submit" class="btn-primary">Submit</button>
                 </div>
             </form>
+            </div>
+            <!-- End modal-body -->
         </div>
     </div>
 
