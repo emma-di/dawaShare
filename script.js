@@ -60,7 +60,7 @@ const rideForm = document.getElementById('rideForm');
 
 // ===== TAB FUNCTIONALITY =====
 let currentTab = 'departures'; // Track which tab is active
-let allRidesData = []; // Store all rides data
+let allRidesData = []; // Store all rides data (cached)
 let filters = {
     dates: [],
     airport: '',
@@ -79,7 +79,7 @@ tabButtons.forEach(button => {
         currentTab = button.getAttribute('data-tab');
         // Reset filters when switching tabs
         resetFilters();
-        // Reload rides with new filter
+        // Reload rides with new filter (uses cached data, no fetch)
         displayRides(allRidesData);
     });
 });
@@ -472,7 +472,7 @@ skipButtons.forEach(button => {
             // Expand the section
             section.classList.remove('collapsed');
             button.classList.remove('active');
-            button.textContent = "Don't know yet";
+            button.textContent = "Skip for now";
             
             // Make fields required again
             if (sectionType === 'departure') {
@@ -533,6 +533,28 @@ rideForm.addEventListener('submit', async (e) => {
     data.email = data.emailUsername + '@stanford.edu';
     delete data.emailUsername; // Remove the username-only field
     
+    // Check if sections are skipped (collapsed)
+    const departureSection = document.getElementById('departureSection');
+    const arrivalSection = document.getElementById('arrivalSection');
+    
+    data.departureSkipped = departureSection.classList.contains('collapsed');
+    data.arrivalSkipped = arrivalSection.classList.contains('collapsed');
+    
+    // If section is skipped, clear its data so backend knows not to update those fields
+    if (data.departureSkipped) {
+        delete data.depDate;
+        delete data.depTime;
+        delete data.depAirport;
+        delete data.depAirline;
+    }
+    
+    if (data.arrivalSkipped) {
+        delete data.arrDate;
+        delete data.arrTime;
+        delete data.arrAirport;
+        delete data.arrAirline;
+    }
+    
     try {
         // Send data to Google Sheets
         const response = await fetch(GOOGLE_SHEET_URL, {
@@ -545,14 +567,14 @@ rideForm.addEventListener('submit', async (e) => {
         });
         
         // Success!
-        alert('✅ Thank you! Your ride info has been submitted successfully!');
+        alert('✅ Thank you! Your ride info has been submitted successfully.');
         
         // Reset form and close modal
         rideForm.reset();
         modal.classList.remove('active');
         
-        // Refresh the rides display
-        loadRides();
+        // Refresh the rides display (forces new fetch)
+        forceRefreshData();
         
     } catch (error) {
         console.error('Error:', error);
@@ -565,22 +587,41 @@ rideForm.addEventListener('submit', async (e) => {
 });
 
 // ===== LOAD RIDES FROM GOOGLE SHEETS =====
+let isDataLoaded = false; // Track if we've loaded data yet
+
 async function loadRides() {
+    // If data is already cached, just re-render with cached data
+    if (isDataLoaded) {
+        displayRides(allRidesData);
+        return;
+    }
+    
+    // Show loading state
+    const ridesTable = document.getElementById('ridesTable');
+    ridesTable.innerHTML = '<p class="loading-state">Loading rides... ⏳</p>';
+    
     try {
         const response = await fetch(GOOGLE_SHEET_URL);
         const result = await response.json();
         
         if (result.result === 'success' && result.data.length > 0) {
             allRidesData = result.data;
+            isDataLoaded = true; // Mark data as loaded
             populateFilterDropdowns(allRidesData);
             displayRides(allRidesData);
         } else {
-            document.getElementById('ridesTable').innerHTML = '<p class="empty-state">No rides yet. Be the first to share your ride info!</p>';
+            ridesTable.innerHTML = '<p class="empty-state">No rides yet. Be the first to share your ride info!</p>';
         }
     } catch (error) {
         console.error('Error loading rides:', error);
-        document.getElementById('ridesTable').innerHTML = '<p class="empty-state">No rides yet. Be the first to share your ride info!</p>';
+        ridesTable.innerHTML = '<p class="empty-state">No rides yet. Be the first to share your ride info!</p>';
     }
+}
+
+// Force refresh data (call this after form submission)
+function forceRefreshData() {
+    isDataLoaded = false;
+    loadRides();
 }
 
 // ===== DISPLAY RIDES IN TABLE =====

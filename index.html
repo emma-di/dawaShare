@@ -96,6 +96,14 @@
                 <p class="empty-state">No rides yet. Be the first to share your ride info!</p>
             </div>
         </div>
+        
+        <!-- Footer -->
+        <footer class="site-footer">
+            <p class="footer-tagline">Made for Students for a Sustainable Stanford 🌎💞</p>
+            <a href="mailto:emmadi@stanford.edu?subject=dawaShare Feedback" class="footer-contact">
+                Suggestions or feedback? Contact me!
+            </a>
+        </footer>
     </div>
 
     <!-- Popup Modal Form -->
@@ -113,6 +121,11 @@
             <!-- Scrollable Form Content -->
             <div class="modal-body">
                 <form id="rideForm">
+                <!-- Info Notice -->
+                <div class="form-info-notice">
+                    <strong>ℹ️ Note:</strong> If you submit this form multiple times, your new information will update your existing entry. Any fields you don't fill out will keep their previous values.
+                </div>
+                
                 <!-- Personal Info Section -->
                 <div class="form-section">
                     <div class="form-row">
@@ -164,7 +177,7 @@
                     <div class="section-header">
                         <h3>Departure Info</h3>
                         <button type="button" class="skip-section-btn" data-section="departure">
-                            Don't know yet
+                            Skip for now
                         </button>
                     </div>
                     <div id="departureSection" class="collapsible-section">
@@ -203,7 +216,7 @@
                     <div class="section-header">
                         <h3>Arrival Info</h3>
                         <button type="button" class="skip-section-btn" data-section="arrival">
-                            Don't know yet
+                            Skip for now
                         </button>
                     </div>
                     <div id="arrivalSection" class="collapsible-section">
