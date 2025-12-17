@@ -249,37 +249,53 @@ function displayRides(rides) {
     let html = '<div class="rides-grid">';
     
     filteredRides.forEach(ride => {
-        const hasDeparture = ride['Dep Date'] && ride['Dep Airport'];
-        const hasArrival = ride['Arr Date'] && ride['Arr Airport'];
+        // Determine which info to show based on current tab
+        let date, time, airport, airline, icon;
+        
+        if (currentTab === 'departures') {
+            date = ride['Dep Date'];
+            time = ride['Dep Time'];
+            airport = ride['Dep Airport'];
+            airline = ride['Dep Airline'];
+            icon = '🛫';
+        } else {
+            date = ride['Arr Date'];
+            time = ride['Arr Time'];
+            airport = ride['Arr Airport'];
+            airline = ride['Arr Airline'];
+            icon = '🛬';
+        }
+        
+        // Format time to be more readable (remove seconds if present)
+        let formattedTime = time;
+        if (time && time.includes(':')) {
+            const timeParts = time.split(':');
+            formattedTime = `${timeParts[0]}:${timeParts[1]}`;
+        }
+        
+        // Extract airport code (first 3 letters before the dash)
+        const airportCode = airport ? airport.split(' ')[0] : '';
         
         html += `
             <div class="ride-card">
-                <div class="ride-header">
-                    <h3>${ride['First Name']} ${ride['Last Name']}</h3>
-                    ${hasDeparture ? `<span class="ride-date">${formatDate(ride['Dep Date'])}</span>` : ''}
+                <div class="card-header">
+                    <h3 class="rider-name">${ride['First Name']} ${ride['Last Name']}</h3>
+                    <div class="date-time">
+                        <span class="date">${formatDate(date)}</span>
+                        <span class="time">${formattedTime}</span>
+                    </div>
                 </div>
-                <div class="ride-details">
-                    ${hasDeparture ? `
-                        <div class="ride-section">
-                            <strong>🛫 Departure:</strong>
-                            <p>${ride['Dep Airport']} at ${ride['Dep Time']}</p>
-                            ${ride['Dep Airline'] ? `<p class="airline">${ride['Dep Airline']}</p>` : ''}
-                        </div>
-                    ` : '<div class="ride-section"><p class="unknown">Departure info not provided</p></div>'}
-                    
-                    ${hasArrival ? `
-                        <div class="ride-section">
-                            <strong>🛬 Arrival:</strong>
-                            <p>${ride['Arr Airport']} at ${ride['Arr Time']}</p>
-                            ${ride['Arr Airline'] ? `<p class="airline">${ride['Arr Airline']}</p>` : ''}
-                        </div>
-                    ` : '<div class="ride-section"><p class="unknown">Arrival info not provided</p></div>'}
-                    
-                    ${ride['Location'] ? `<p class="location">📍 ${ride['Location']}</p>` : ''}
+                
+                <div class="card-tags">
+                    <span class="tag airport-tag">${icon} ${airportCode}</span>
+                    ${airline ? `<span class="tag airline-tag">${airline}</span>` : ''}
                 </div>
-                <div class="ride-contact">
-                    <a href="mailto:${ride['Email']}" class="contact-btn">📧 Contact</a>
-                    ${ride['Phone'] ? `<a href="tel:${ride['Phone']}" class="contact-btn">📞 Call</a>` : ''}
+                
+                ${ride['Location'] ? `<div class="card-location">📍 ${ride['Location']}</div>` : ''}
+                
+                <div class="card-actions">
+                    <a href="mailto:${ride['Email']}" class="contact-btn-full">✉️ Contact</a>
+                    ${ride['Phone'] ? `<a href="tel:${ride['Phone']}" class="contact-btn-full phone-btn">📞 Call</a>` : ''}
                 </div>
             </div>
         `;

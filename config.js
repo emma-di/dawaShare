@@ -17,7 +17,7 @@ const LOCATIONS = [
   'Stern Hall',
   'Toyon Hall',
   'Wilbur Hall',
-  'Off-Campus (explain below)'
+  'Other / Off-Campus'
 ];
 
 const AIRPORTS = [
