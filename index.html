@@ -4,164 +4,152 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>dawaShare - Stanford Airport Rideshare</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #8C1515 0%, #2e2d29 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-
-        .container {
-            text-align: center;
-            padding: 40px 20px;
-            max-width: 800px;
-        }
-
-        .logo {
-            font-size: 72px;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
-
-        .tagline {
-            font-size: 24px;
-            margin-bottom: 40px;
-            opacity: 0.9;
-        }
-
-        .description {
-            font-size: 18px;
-            line-height: 1.6;
-            margin-bottom: 50px;
-            opacity: 0.85;
-        }
-
-        .buttons {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 15px 40px;
-            font-size: 18px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: white;
-            color: #8C1515;
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .coming-soon {
-            margin-top: 60px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
-        }
-
-        .coming-soon h2 {
-            font-size: 24px;
-            margin-bottom: 15px;
-        }
-
-        .coming-soon ul {
-            list-style: none;
-            font-size: 16px;
-            line-height: 2;
-        }
-
-        .coming-soon li:before {
-            content: "✓ ";
-            margin-right: 10px;
-            font-weight: bold;
-        }
-
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 36px;
-            }
-
-            .tagline {
-                font-size: 20px;
-            }
-
-            .buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .btn {
-                width: 100%;
-                max-width: 300px;
-            }
-        }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <div class="logo">🚗✈️</div>
-        <h1>dawaShare</h1>
-        <p class="tagline">Stanford Airport Rideshare Platform</p>
-        
-        <p class="description">
-            Find students traveling to the same airport at the same time. 
-            Share rides, split costs, and make getting to the airport easier.
-        </p>
+    <!-- Main Page Content -->
+    <div class="main-container">
+        <header>
+            <div class="logo-section">
+                <span class="logo-icon">🚗✈️</span>
+                <h1>dawaShare</h1>
+            </div>
+            <button id="openFormBtn" class="add-ride-btn">+ Add Your Ride</button>
+        </header>
 
-        <div class="buttons">
-            <button class="btn btn-primary" onclick="alert('Form coming soon! Check back after setup is complete.')">
-                Share Your Ride
-            </button>
-            <button class="btn btn-secondary" onclick="alert('Ride browser coming soon! Check back after setup is complete.')">
-                Find a Ride
-            </button>
-        </div>
-
-        <div class="coming-soon">
-            <h2>Coming Soon</h2>
-            <ul>
-                <li>Easy flight info submission</li>
-                <li>Smart airport & time matching</li>
-                <li>Privacy-protected contact sharing</li>
-                <li>Automatic terminal filtering</li>
-                <li>Email notifications for matches</li>
-            </ul>
+        <div class="rides-container">
+            <h2>Available Rides</h2>
+            <div id="ridesTable">
+                <!-- Rides will be displayed here -->
+                <p class="empty-state">No rides yet. Be the first to share your ride info!</p>
+            </div>
         </div>
     </div>
+
+    <!-- Popup Modal Form -->
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" id="closeBtn">&times;</button>
+            
+            <div class="form-header">
+                <h2>Share Your Ride Info</h2>
+                <p>Help fellow Stanford students find carpool matches</p>
+            </div>
+
+            <form id="rideForm">
+                <!-- Personal Info Section -->
+                <div class="form-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name <span class="required">*</span></label>
+                            <input type="text" id="firstName" name="firstName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name <span class="required">*</span></label>
+                            <input type="text" id="lastName" name="lastName" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="email">Student Email <span class="required">*</span></label>
+                            <input type="email" id="email" name="email" placeholder="@stanford.edu" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" placeholder="(123) 456-7890">
+                        </div>
+                        <div class="form-group">
+                            <label for="location">Location</label>
+                            <select id="location" name="location">
+                                <option value="">Select location...</option>
+                                <!-- UPDATE THESE VALUES in script.js - LOCATIONS array -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Departure Info Section -->
+                <div class="form-section">
+                    <h3>Departure Info</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="depDate">Date <span class="required">*</span></label>
+                            <input type="date" id="depDate" name="depDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="depTime">Time <span class="required">*</span></label>
+                            <input type="time" id="depTime" name="depTime" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="depAirport">Airport <span class="required">*</span></label>
+                            <select id="depAirport" name="depAirport" required>
+                                <option value="">Select airport...</option>
+                                <!-- UPDATE THESE VALUES in script.js - AIRPORTS array -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="depAirline">Airline</label>
+                            <select id="depAirline" name="depAirline">
+                                <option value="">Select airline...</option>
+                                <!-- UPDATE THESE VALUES in script.js - AIRLINES array -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Arrival Info Section -->
+                <div class="form-section">
+                    <h3>Arrival Info</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="arrDate">Date <span class="required">*</span></label>
+                            <input type="date" id="arrDate" name="arrDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="arrTime">Time <span class="required">*</span></label>
+                            <input type="time" id="arrTime" name="arrTime" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="arrAirport">Airport <span class="required">*</span></label>
+                            <select id="arrAirport" name="arrAirport" required>
+                                <option value="">Select airport...</option>
+                                <!-- UPDATE THESE VALUES in script.js - AIRPORTS array -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="arrAirline">Airline</label>
+                            <select id="arrAirline" name="arrAirline">
+                                <option value="">Select airline...</option>
+                                <!-- UPDATE THESE VALUES in script.js - AIRLINES array -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="alreadySubmittedBtn">
+                        Already submitted / Unsure rn
+                    </button>
+                    <button type="submit" class="btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
