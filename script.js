@@ -65,8 +65,11 @@ const lastNameInput = document.getElementById('lastName');
 // Capitalize first letter when user leaves the field
 function capitalizeName(input) {
     if (input.value) {
+        // Trim leading/trailing spaces and collapse multiple spaces
+        const trimmed = input.value.trim().replace(/\s+/g, ' ');
+        
         // Split by spaces to handle multiple words
-        const words = input.value.split(' ');
+        const words = trimmed.split(' ');
         const capitalizedWords = words.map(word => {
             if (word.length > 0) {
                 return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
