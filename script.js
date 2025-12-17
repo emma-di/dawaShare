@@ -2,14 +2,21 @@
 // UPDATE THESE ARRAYS WITH YOUR REAL VALUES
 
 const LOCATIONS = [
-    'Branner Hall',
-    'Stern Hall',
-    'Wilbur Hall',
-    'Florence Moore Hall',
-    'Toyon Hall',
-    'Roble Hall',
-    'Crothers Hall',
-    'Off-Campus'
+  'Branner',
+  'Casper Quad',
+  'Crothers / Crothers Memorial (CroMem)',
+  'EVGR',
+  'Florence Moore',
+  'GovCo',
+  'Lagunita Court',
+  'Mirrielees',
+  'Roble',
+  'Row: Lower (closer to Tresidder)',
+  'Row: Upper (further from Tresidder)',
+  'Stern',
+  'Toyon',
+  'Wilbur',
+  'Other / Off-Campus (explain below)'
 ];
 
 const AIRPORTS = [
@@ -19,13 +26,21 @@ const AIRPORTS = [
 ];
 
 const AIRLINES = [
-    'Alaska Airlines',
-    'American Airlines',
-    'Delta Air Lines',
-    'JetBlue Airways',
-    'Southwest Airlines',
-    'United Airlines',
-    'Other'
+  'Air Canada',
+  'Alaska',
+  'American',
+  'British Airways',
+  'Delta',
+  'Frontier',
+  'Hawaiian',
+  'JetBlue',
+  'Korean Air',
+  'Lufthansa',
+  'Singapore',
+  'Southwest',
+  'Spirit',
+  'United',
+  'Other'
 ];
 
 // ===== POPULATE DROPDOWNS =====
@@ -107,9 +122,18 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// ===== CONFIGURATION =====
+const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz3tCsxyBNcBZZA2JfEKE71Am54hSCoak2rFQqy3_x5tCEf1MbV9z9wrHu2xou1XO2o/exec'; // Paste your URL here!
+
 // ===== FORM SUBMISSION =====
-rideForm.addEventListener('submit', (e) => {
+rideForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    
+    // Disable submit button to prevent double submissions
+    const submitBtn = rideForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
     
     // Get form data
     const formData = new FormData(rideForm);
@@ -118,17 +142,103 @@ rideForm.addEventListener('submit', (e) => {
         data[key] = value;
     });
     
-    console.log('Form submitted:', data);
+    try {
+        // Send data to Google Sheets
+        const response = await fetch(GOOGLE_SHEET_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        // Success!
+        alert('✅ Thank you! Your ride info has been submitted successfully!');
+        
+        // Reset form and close modal
+        rideForm.reset();
+        modal.classList.remove('active');
+        
+        // Refresh the rides display
+        loadRides();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('❌ Oops! Something went wrong. Please try again or contact support.');
+    } finally {
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    }
+});
+
+// ===== LOAD RIDES FROM GOOGLE SHEETS =====
+async function loadRides() {
+    try {
+        const response = await fetch(GOOGLE_SHEET_URL);
+        const result = await response.json();
+        
+        if (result.result === 'success' && result.data.length > 0) {
+            displayRides(result.data);
+        } else {
+            document.getElementById('ridesTable').innerHTML = '<p class="empty-state">No rides yet. Be the first to share your ride info!</p>';
+        }
+    } catch (error) {
+        console.error('Error loading rides:', error);
+    }
+}
+
+// ===== DISPLAY RIDES IN TABLE =====
+function displayRides(rides) {
+    const ridesTable = document.getElementById('ridesTable');
     
-    // TODO: Send data to backend/storage
-    // For now, just show alert and close modal
-    alert('Thank you! Your ride info has been submitted. (Note: Storage functionality coming soon)');
+    let html = '<div class="rides-grid">';
     
-    // Reset form and close modal
-    rideForm.reset();
-    modal.classList.remove('active');
+    rides.forEach(ride => {
+        html += `
+            <div class="ride-card">
+                <div class="ride-header">
+                    <h3>${ride['First Name']} ${ride['Last Name']}</h3>
+                    <span class="ride-date">${formatDate(ride['Dep Date'])}</span>
+                </div>
+                <div class="ride-details">
+                    <div class="ride-section">
+                        <strong>Departure:</strong>
+                        <p>${ride['Dep Airport']} at ${ride['Dep Time']}</p>
+                        ${ride['Dep Airline'] ? `<p class="airline">${ride['Dep Airline']}</p>` : ''}
+                    </div>
+                    <div class="ride-section">
+                        <strong>Arrival:</strong>
+                        <p>${ride['Arr Airport']} at ${ride['Arr Time']}</p>
+                        ${ride['Arr Airline'] ? `<p class="airline">${ride['Arr Airline']}</p>` : ''}
+                    </div>
+                    ${ride['Location'] ? `<p class="location">📍 ${ride['Location']}</p>` : ''}
+                </div>
+                <div class="ride-contact">
+                    <a href="mailto:${ride['Email']}" class="contact-btn">📧 Contact</a>
+                    ${ride['Phone'] ? `<a href="tel:${ride['Phone']}" class="contact-btn">📞 Call</a>` : ''}
+                </div>
+            </div>
+        `;
+    });
     
-    // TODO: Refresh rides display
+    html += '</div>';
+    ridesTable.innerHTML = html;
+}
+
+// ===== HELPER FUNCTION =====
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Load rides when page loads
+window.addEventListener('DOMContentLoaded', () => {
+    populateDropdowns();
+    loadRides();
+    // Show modal automatically on page load
+    modal.classList.add('active');
 });
 
 // ===== EMAIL VALIDATION =====
