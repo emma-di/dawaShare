@@ -25,14 +25,6 @@ function populateDropdowns() {
             select.remove(1);
         }
         
-        // Add "Unknown yet" option for arrival airport
-        if (selectId === 'arrAirport') {
-            const unknownOption = document.createElement('option');
-            unknownOption.value = 'Unknown yet';
-            unknownOption.textContent = 'Unknown yet';
-            select.appendChild(unknownOption);
-        }
-        
         AIRPORTS.forEach(airport => {
             const option = document.createElement('option');
             option.value = airport;
@@ -48,14 +40,6 @@ function populateDropdowns() {
         // Keep the first "Select airline..." option, remove the rest
         while (select.options.length > 1) {
             select.remove(1);
-        }
-        
-        // Add "Unknown yet" option for arrival airline
-        if (selectId === 'arrAirline') {
-            const unknownOption = document.createElement('option');
-            unknownOption.value = 'Unknown yet';
-            unknownOption.textContent = 'Unknown yet';
-            select.appendChild(unknownOption);
         }
         
         AIRLINES.forEach(airline => {
@@ -101,6 +85,59 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && modal.classList.contains('active')) {
         modal.classList.remove('active');
     }
+});
+
+// ===== SKIP SECTION FUNCTIONALITY =====
+const skipButtons = document.querySelectorAll('.skip-section-btn');
+
+skipButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const sectionType = button.getAttribute('data-section');
+        const section = document.getElementById(`${sectionType}Section`);
+        const isCollapsed = section.classList.contains('collapsed');
+        
+        if (isCollapsed) {
+            // Expand the section
+            section.classList.remove('collapsed');
+            button.classList.remove('active');
+            button.textContent = "Don't know yet";
+            
+            // Make fields required again
+            if (sectionType === 'departure') {
+                document.getElementById('depDate').setAttribute('required', '');
+                document.getElementById('depTime').setAttribute('required', '');
+                document.getElementById('depAirport').setAttribute('required', '');
+            } else if (sectionType === 'arrival') {
+                document.getElementById('arrDate').setAttribute('required', '');
+                document.getElementById('arrTime').setAttribute('required', '');
+                document.getElementById('arrAirport').setAttribute('required', '');
+            }
+        } else {
+            // Collapse the section
+            section.classList.add('collapsed');
+            button.classList.add('active');
+            button.textContent = 'Skipped - Click to add info';
+            
+            // Remove required attributes and clear values
+            if (sectionType === 'departure') {
+                document.getElementById('depDate').removeAttribute('required');
+                document.getElementById('depTime').removeAttribute('required');
+                document.getElementById('depAirport').removeAttribute('required');
+                document.getElementById('depDate').value = '';
+                document.getElementById('depTime').value = '';
+                document.getElementById('depAirport').value = '';
+                document.getElementById('depAirline').value = '';
+            } else if (sectionType === 'arrival') {
+                document.getElementById('arrDate').removeAttribute('required');
+                document.getElementById('arrTime').removeAttribute('required');
+                document.getElementById('arrAirport').removeAttribute('required');
+                document.getElementById('arrDate').value = '';
+                document.getElementById('arrTime').value = '';
+                document.getElementById('arrAirport').value = '';
+                document.getElementById('arrAirline').value = '';
+            }
+        }
+    });
 });
 
 // ===== FORM SUBMISSION =====
@@ -179,23 +216,32 @@ function displayRides(rides) {
     let html = '<div class="rides-grid">';
     
     rides.forEach(ride => {
+        const hasDeparture = ride['Dep Date'] && ride['Dep Airport'];
+        const hasArrival = ride['Arr Date'] && ride['Arr Airport'];
+        
         html += `
             <div class="ride-card">
                 <div class="ride-header">
                     <h3>${ride['First Name']} ${ride['Last Name']}</h3>
-                    <span class="ride-date">${formatDate(ride['Dep Date'])}</span>
+                    ${hasDeparture ? `<span class="ride-date">${formatDate(ride['Dep Date'])}</span>` : ''}
                 </div>
                 <div class="ride-details">
-                    <div class="ride-section">
-                        <strong>🛫 Departure:</strong>
-                        <p>${ride['Dep Airport']} at ${ride['Dep Time']}</p>
-                        ${ride['Dep Airline'] ? `<p class="airline">${ride['Dep Airline']}</p>` : ''}
-                    </div>
-                    <div class="ride-section">
-                        <strong>🛬 Arrival:</strong>
-                        ${ride['Arr Date'] ? `<p>${ride['Arr Airport']} at ${ride['Arr Time']}</p>` : '<p class="unknown">Unknown yet</p>'}
-                        ${ride['Arr Airline'] && ride['Arr Airline'] !== 'Unknown yet' ? `<p class="airline">${ride['Arr Airline']}</p>` : ''}
-                    </div>
+                    ${hasDeparture ? `
+                        <div class="ride-section">
+                            <strong>🛫 Departure:</strong>
+                            <p>${ride['Dep Airport']} at ${ride['Dep Time']}</p>
+                            ${ride['Dep Airline'] ? `<p class="airline">${ride['Dep Airline']}</p>` : ''}
+                        </div>
+                    ` : '<div class="ride-section"><p class="unknown">Departure info not provided</p></div>'}
+                    
+                    ${hasArrival ? `
+                        <div class="ride-section">
+                            <strong>🛬 Arrival:</strong>
+                            <p>${ride['Arr Airport']} at ${ride['Arr Time']}</p>
+                            ${ride['Arr Airline'] ? `<p class="airline">${ride['Arr Airline']}</p>` : ''}
+                        </div>
+                    ` : '<div class="ride-section"><p class="unknown">Arrival info not provided</p></div>'}
+                    
                     ${ride['Location'] ? `<p class="location">📍 ${ride['Location']}</p>` : ''}
                 </div>
                 <div class="ride-contact">
@@ -249,11 +295,6 @@ phoneInput.addEventListener('input', (e) => {
 const today = new Date().toISOString().split('T')[0];
 document.getElementById('depDate').setAttribute('min', today);
 document.getElementById('arrDate').setAttribute('min', today);
-
-// Make arrival fields optional
-document.getElementById('arrDate').removeAttribute('required');
-document.getElementById('arrTime').removeAttribute('required');
-document.getElementById('arrAirport').removeAttribute('required');
 
 // Load rides and show modal when page loads
 window.addEventListener('DOMContentLoaded', () => {

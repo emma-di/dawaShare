@@ -217,14 +217,78 @@ h1 {
     border-bottom: none;
 }
 
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
 .form-section h3 {
     font-size: 18px;
     color: var(--cool-gray);
-    margin-bottom: 20px;
+    margin-bottom: 0;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-size: 14px;
+}
+
+.skip-section-btn {
+    background: transparent;
+    color: var(--cool-gray);
+    border: 2px solid var(--border-gray);
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.skip-section-btn:hover {
+    background: var(--light-gray);
+    border-color: var(--cool-gray);
+}
+
+.skip-section-btn.active {
+    background: var(--cardinal);
+    color: white;
+    border-color: var(--cardinal);
+}
+
+.skip-section-btn.active:hover {
+    background: var(--cardinal-dark);
+    border-color: var(--cardinal-dark);
+}
+
+.collapsible-section {
+    max-height: 1000px;
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.3s ease, margin 0.3s ease;
+    opacity: 1;
+}
+
+.collapsible-section.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-bottom: 0;
+}
+
+.skipped-notice {
+    padding: 12px 16px;
+    background: var(--light-gray);
+    border-radius: 8px;
+    color: var(--cool-gray);
+    font-size: 14px;
+    font-style: italic;
+    margin-top: 10px;
+    display: none;
+}
+
+.skipped-notice.show {
+    display: block;
 }
 
 /* ===== Form Rows & Groups ===== */

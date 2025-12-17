@@ -3,23 +3,21 @@
 // This file is separate so it won't get overwritten when updating other functionality
 
 const LOCATIONS = [
-    'Branner Hall',
-    'Stern Hall',
-    'Wilbur Hall',
-    'Florence Moore Hall',
-    'Toyon Hall',
-    'Roble Hall',
-    'Crothers Hall',
-    'Crothers Memorial Hall',
-    'Kimball Hall',
-    'Larkin Hall',
-    'Trancos Hall',
-    'Ujamaa',
-    'Casa Zapata',
-    'Okada',
-    'Rains Houses',
-    'Graduate Housing',
-    'Off-Campus'
+  'Branner Hall',
+  'Casper Quad',
+  'Crothers / Crothers Memorial (CroMem)',
+  'EVGR',
+  'Florence Moore Hall',
+  'GovCo',
+  'Lagunita Court',
+  'Mirrielees',
+  'Roble Hall',
+  'Row: Lower (closer to Tresidder)',
+  'Row: Upper (further from Tresidder)',
+  'Stern Hall',
+  'Toyon Hall',
+  'Wilbur Hall',
+  'Off-Campus (explain below)'
 ];
 
 const AIRPORTS = [
