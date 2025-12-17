@@ -266,15 +266,25 @@ function displayRides(rides) {
             icon = '🛬';
         }
         
-        // Format time to be more readable (remove seconds if present)
-        let formattedTime = time;
+        // Format time to 12-hour format with AM/PM
+        let formattedTime = 'Time TBD';
         if (time && time.includes(':')) {
             const timeParts = time.split(':');
-            formattedTime = `${timeParts[0]}:${timeParts[1]}`;
+            let hours = parseInt(timeParts[0]);
+            const minutes = timeParts[1];
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12; // Convert to 12-hour format
+            formattedTime = `${hours}:${minutes} ${ampm}`;
         }
         
         // Extract airport code (first 3 letters before the dash)
         const airportCode = airport ? airport.split(' ')[0] : '';
+        
+        // Build airport + airline text with comma if both exist
+        let airportAirlineText = `${icon} ${airportCode}`;
+        if (airline) {
+            airportAirlineText += `, ${airline}`;
+        }
         
         html += `
             <div class="ride-card">
@@ -286,16 +296,14 @@ function displayRides(rides) {
                     </div>
                 </div>
                 
-                <div class="card-tags">
-                    <span class="tag airport-tag">${icon} ${airportCode}</span>
-                    ${airline ? `<span class="tag airline-tag">${airline}</span>` : ''}
+                <div class="card-info">
+                    <div class="card-airport-airline">${airportAirlineText}</div>
+                    ${ride['Location'] ? `<div class="card-location">📍 ${ride['Location']}</div>` : ''}
                 </div>
                 
-                ${ride['Location'] ? `<div class="card-location">📍 ${ride['Location']}</div>` : ''}
-                
                 <div class="card-actions">
-                    <a href="mailto:${ride['Email']}" class="contact-btn-full">✉️ Contact</a>
-                    ${ride['Phone'] ? `<a href="tel:${ride['Phone']}" class="contact-btn-full phone-btn">📞 Call</a>` : ''}
+                    <a href="mailto:${ride['Email']}" class="contact-btn">✉️ Contact</a>
+                    ${ride['Phone'] ? `<a href="tel:${ride['Phone']}" class="contact-btn phone-btn">📞 Call</a>` : ''}
                 </div>
             </div>
         `;

@@ -610,6 +610,9 @@ select:focus {
     border-radius: 12px;
     padding: 20px;
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 .ride-card:hover {
@@ -618,86 +621,103 @@ select:focus {
     transform: translateY(-2px);
 }
 
-.ride-header {
+.card-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid var(--light-gray);
+    align-items: flex-start;
+    gap: 12px;
 }
 
-.ride-header h3 {
-    font-size: 18px;
+.rider-name {
+    font-size: 20px;
+    font-weight: 700;
     color: var(--cardinal);
     margin: 0;
+    flex: 1;
 }
 
-.ride-date {
+.date-time {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.date {
     font-size: 14px;
-    color: var(--cool-gray);
     font-weight: 600;
-}
-
-.ride-details {
-    margin-bottom: 15px;
-}
-
-.ride-section {
-    margin-bottom: 12px;
-}
-
-.ride-section strong {
     color: var(--cool-gray);
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
-.ride-section p {
-    margin: 5px 0;
-    font-size: 15px;
+.time {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--black);
 }
 
-.airline {
-    color: #666;
-    font-size: 13px;
-}
-
-.location {
-    margin-top: 10px;
-    padding-top: 10px;
+.card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 0;
     border-top: 1px solid var(--light-gray);
-    color: var(--cool-gray);
-    font-size: 14px;
+    border-bottom: 1px solid var(--light-gray);
 }
 
-.ride-contact {
+.card-airport-airline {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--black);
+}
+
+.card-location {
+    font-size: 14px;
+    color: var(--cool-gray);
+}
+
+.card-actions {
     display: flex;
     gap: 10px;
-    margin-top: 15px;
 }
 
 .contact-btn {
     flex: 1;
-    padding: 10px;
+    padding: 12px 16px;
     background: var(--cardinal);
     color: white;
     text-decoration: none;
     text-align: center;
-    border-radius: 6px;
-    font-size: 14px;
+    border-radius: 8px;
+    font-size: 15px;
     font-weight: 600;
     transition: all 0.2s ease;
+    display: inline-block;
 }
 
 .contact-btn:hover {
     background: var(--cardinal-dark);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px var(--shadow);
+}
+
+.contact-btn.phone-btn {
+    background: var(--cardinal-light);
+}
+
+.contact-btn.phone-btn:hover {
+    background: var(--cardinal);
 }
 
 @media (max-width: 768px) {
     .rides-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .card-header {
+        flex-direction: column;
+    }
+    
+    .date-time {
+        align-items: flex-start;
     }
 }
