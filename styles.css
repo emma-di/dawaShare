@@ -95,6 +95,38 @@ h1 {
     color: var(--cool-gray);
 }
 
+/* ===== Tabs ===== */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border-gray);
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--cool-gray);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+    font-family: 'DM Sans', sans-serif;
+    position: relative;
+    bottom: -2px;
+}
+
+.tab-btn:hover {
+    color: var(--cardinal);
+}
+
+.tab-btn.active {
+    color: var(--cardinal);
+    border-bottom-color: var(--cardinal);
+}
+
 .empty-state {
     text-align: center;
     padding: 60px 20px;

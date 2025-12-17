@@ -58,6 +58,23 @@ const closeBtn = document.getElementById('closeBtn');
 const alreadySubmittedBtn = document.getElementById('alreadySubmittedBtn');
 const rideForm = document.getElementById('rideForm');
 
+// ===== TAB FUNCTIONALITY =====
+let currentTab = 'departures'; // Track which tab is active
+
+const tabButtons = document.querySelectorAll('.tab-btn');
+tabButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        // Remove active class from all tabs
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        // Add active class to clicked tab
+        button.classList.add('active');
+        // Update current tab
+        currentTab = button.getAttribute('data-tab');
+        // Reload rides with new filter
+        loadRides();
+    });
+});
+
 // Close modal when clicking X button
 closeBtn.addEventListener('click', () => {
     modal.classList.remove('active');
@@ -213,9 +230,25 @@ async function loadRides() {
 function displayRides(rides) {
     const ridesTable = document.getElementById('ridesTable');
     
+    // Filter rides based on current tab
+    const filteredRides = rides.filter(ride => {
+        if (currentTab === 'departures') {
+            // Show rides with departure info
+            return ride['Dep Date'] && ride['Dep Airport'];
+        } else {
+            // Show rides with arrival info
+            return ride['Arr Date'] && ride['Arr Airport'];
+        }
+    });
+    
+    if (filteredRides.length === 0) {
+        ridesTable.innerHTML = `<p class="empty-state">No ${currentTab} yet. Be the first to share your ride info!</p>`;
+        return;
+    }
+    
     let html = '<div class="rides-grid">';
     
-    rides.forEach(ride => {
+    filteredRides.forEach(ride => {
         const hasDeparture = ride['Dep Date'] && ride['Dep Airport'];
         const hasArrival = ride['Arr Date'] && ride['Arr Airport'];
         

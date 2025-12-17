@@ -17,11 +17,18 @@
                 <span class="logo-icon">🚗✈️</span>
                 <h1>dawaShare</h1>
             </div>
-            <button id="openFormBtn" class="add-ride-btn">+ Add Your Ride Info</button>
+            <button id="openFormBtn" class="add-ride-btn">+ Add Your Ride</button>
         </header>
 
         <div class="rides-container">
             <h2>Available Rides</h2>
+            
+            <!-- Tabs for Departures and Arrivals -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="departures">Departures</button>
+                <button class="tab-btn" data-tab="arrivals">Arrivals</button>
+            </div>
+            
             <div id="ridesTable">
                 <!-- Rides will be displayed here -->
                 <p class="empty-state">No rides yet. Be the first to share your ride info!</p>
@@ -163,7 +170,7 @@
                 <!-- Form Actions -->
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" id="alreadySubmittedBtn">
-                        Already submitted / Not sure
+                        Already submitted / Not sure yet
                     </button>
                     <button type="submit" class="btn-primary">Submit</button>
                 </div>
