@@ -134,6 +134,31 @@ document.addEventListener('click', () => {
     locationFilterBtn.classList.remove('active');
 });
 
+// Clear All buttons
+document.getElementById('clearDateBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    filters.dates = [];
+    updateFilterButtonText('dateFilterBtn', [], 'All Dates');
+    populateFilterDropdowns(allRidesData);
+    displayRides(allRidesData);
+});
+
+document.getElementById('clearTimeBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    filters.times = [];
+    updateFilterButtonText('timeFilterBtn', [], 'All Times');
+    populateFilterDropdowns(allRidesData);
+    displayRides(allRidesData);
+});
+
+document.getElementById('clearLocationBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    filters.locations = [];
+    updateFilterButtonText('locationFilterBtn', [], 'All Locations');
+    populateFilterDropdowns(allRidesData);
+    displayRides(allRidesData);
+});
+
 // Airport filter (single select)
 filterAirport.addEventListener('change', (e) => {
     filters.airport = e.target.value;
@@ -145,7 +170,12 @@ function updateFilterButtonText(buttonId, filterArray, allText) {
     if (filterArray.length === 0) {
         button.childNodes[0].textContent = allText + ' ';
     } else if (filterArray.length === 1) {
-        button.childNodes[0].textContent = filterArray[0] + ' ';
+        // Format the single item based on which filter it is
+        let displayText = filterArray[0];
+        if (buttonId === 'dateFilterBtn') {
+            displayText = formatDate(filterArray[0]);
+        }
+        button.childNodes[0].textContent = displayText + ' ';
     } else {
         button.childNodes[0].textContent = `${filterArray.length} selected `;
     }

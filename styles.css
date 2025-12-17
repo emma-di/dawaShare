@@ -224,6 +224,29 @@ h1 {
     display: block;
 }
 
+.filter-panel-header {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-gray);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.clear-filter-btn {
+    background: transparent;
+    border: none;
+    color: var(--cardinal);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.clear-filter-btn:hover {
+    background: var(--light-gray);
+}
+
 .filter-options {
     padding: 8px;
 }
