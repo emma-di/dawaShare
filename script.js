@@ -271,30 +271,37 @@ function populateFilterDropdowns(rides) {
     timeOptions.innerHTML = '';
     const timeOrder = ['Early Morning (3-9am)', 'Morning (9am-12pm)', 'Afternoon (12-5pm)', 'Evening (5-9pm)', 'Night (9pm-3am)'];
     timeOrder.forEach(timeRange => {
-        if (timeRanges.has(timeRange)) {
-            const option = document.createElement('div');
-            option.className = 'filter-option';
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `time-${timeRange}`;
-            checkbox.value = timeRange;
-            checkbox.checked = filters.times.includes(timeRange);
-            checkbox.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    filters.times.push(timeRange);
-                } else {
-                    filters.times = filters.times.filter(t => t !== timeRange);
-                }
-                updateFilterButtonText('timeFilterBtn', filters.times, 'All Times');
-                displayRides(allRidesData);
-            });
-            const label = document.createElement('label');
-            label.htmlFor = `time-${timeRange}`;
-            label.textContent = timeRange;
-            option.appendChild(checkbox);
-            option.appendChild(label);
-            timeOptions.appendChild(option);
+        const option = document.createElement('div');
+        option.className = 'filter-option';
+        
+        // Check if this time range has any rides
+        const hasRides = timeRanges.has(timeRange);
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `time-${timeRange}`;
+        checkbox.value = timeRange;
+        checkbox.checked = filters.times.includes(timeRange);
+        checkbox.disabled = !hasRides; // Disable if no rides
+        checkbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                filters.times.push(timeRange);
+            } else {
+                filters.times = filters.times.filter(t => t !== timeRange);
+            }
+            updateFilterButtonText('timeFilterBtn', filters.times, 'All Times');
+            displayRides(allRidesData);
+        });
+        const label = document.createElement('label');
+        label.htmlFor = `time-${timeRange}`;
+        label.textContent = timeRange;
+        if (!hasRides) {
+            label.style.color = '#999';
+            label.style.fontStyle = 'italic';
         }
+        option.appendChild(checkbox);
+        option.appendChild(label);
+        timeOptions.appendChild(option);
     });
     
     // Populate location checkboxes

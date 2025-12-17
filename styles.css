@@ -276,6 +276,11 @@ h1 {
     accent-color: var(--cardinal);
 }
 
+.filter-option input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
 .filter-option label {
     cursor: pointer;
     font-size: 14px;
