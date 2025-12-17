@@ -190,7 +190,7 @@ rideForm.addEventListener('submit', async (e) => {
         });
         
         // Success!
-        alert('✅ Thank you! Your ride info has been submitted successfully.');
+        alert('✅ Thank you! Your ride info has been submitted successfully!');
         
         // Reset form and close modal
         rideForm.reset();
@@ -269,19 +269,36 @@ function displayRides(rides) {
         // Format time to 12-hour format with AM/PM
         let formattedTime = 'Time TBD';
         if (time) {
+            console.log('Raw time value:', time, 'Type:', typeof time);
             const timeStr = String(time).trim();
+            console.log('Time string after trim:', timeStr);
             
-            if (timeStr.includes(':')) {
-                const [hourStr, minuteStr] = timeStr.split(':');
-                const hours24 = parseInt(hourStr, 10);
-                const minutes = minuteStr.substring(0, 2); // Take first 2 digits
-                
-                if (!isNaN(hours24) && hours24 >= 0 && hours24 <= 23) {
-                    const ampm = hours24 >= 12 ? 'PM' : 'AM';
-                    const hours12 = hours24 % 12 || 12;
-                    formattedTime = `${hours12}:${minutes} ${ampm}`;
+            if (timeStr && timeStr !== '' && timeStr !== 'undefined' && timeStr !== 'null') {
+                if (timeStr.includes(':')) {
+                    const [hourStr, minuteStr] = timeStr.split(':');
+                    const hours24 = parseInt(hourStr, 10);
+                    const minutes = minuteStr ? minuteStr.substring(0, 2) : '00';
+                    
+                    console.log('Parsed hours24:', hours24, 'minutes:', minutes);
+                    
+                    if (!isNaN(hours24) && hours24 >= 0 && hours24 <= 23) {
+                        const ampm = hours24 >= 12 ? 'PM' : 'AM';
+                        const hours12 = hours24 % 12 || 12;
+                        formattedTime = `${hours12}:${minutes} ${ampm}`;
+                        console.log('Formatted time:', formattedTime);
+                    }
+                } else {
+                    // Try parsing as just a number
+                    const hours24 = parseInt(timeStr, 10);
+                    if (!isNaN(hours24) && hours24 >= 0 && hours24 <= 23) {
+                        const ampm = hours24 >= 12 ? 'PM' : 'AM';
+                        const hours12 = hours24 % 12 || 12;
+                        formattedTime = `${hours12}:00 ${ampm}`;
+                    }
                 }
             }
+        } else {
+            console.log('Time is null/undefined/falsy');
         }
         
         // Extract airport code (first 3 letters before the dash)
