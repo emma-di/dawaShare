@@ -756,21 +756,46 @@ select:focus {
     justify-content: space-between;
     align-items: flex-start;
     gap: 12px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--light-gray);
 }
 
+.date-time {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.date-large {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--cardinal);
+    line-height: 1.2;
+}
+
+.time-large {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--cardinal);
+    line-height: 1.2;
+}
+
+.rider-name-small {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cool-gray);
+    text-align: right;
+    line-height: 1.4;
+}
+
+/* Old styles - kept for backwards compatibility but not used */
 .rider-name {
     font-size: 20px;
     font-weight: 700;
     color: var(--cardinal);
     margin: 0;
     flex: 1;
-}
-
-.date-time {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
 }
 
 .date {
@@ -844,10 +869,11 @@ select:focus {
     }
     
     .card-header {
-        flex-direction: column;
+        flex-direction: row;
+        align-items: flex-start;
     }
     
-    .date-time {
-        align-items: flex-start;
+    .rider-name-small {
+        text-align: right;
     }
 }

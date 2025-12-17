@@ -633,11 +633,11 @@ function displayRides(rides) {
         html += `
             <div class="ride-card">
                 <div class="card-header">
-                    <h3 class="rider-name">${ride['First Name']} ${ride['Last Name']}</h3>
                     <div class="date-time">
-                        <span class="date">${formatDate(date)}</span>
-                        <span class="time">${formattedTime}</span>
+                        <span class="date-large">${formatDate(date)}</span>
+                        <span class="time-large">${formattedTime}</span>
                     </div>
+                    <div class="rider-name-small">${ride['First Name']} ${ride['Last Name']}</div>
                 </div>
                 
                 <div class="card-info">
