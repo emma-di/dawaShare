@@ -481,7 +481,9 @@ h1 {
 .modal-body {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal scroll */
     padding: 20px 40px 40px 40px;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 /* ===== Form Info Notice ===== */
@@ -1025,5 +1027,30 @@ select:focus {
     
     .rider-name-small {
         text-align: right;
+    }
+    
+    /* Modal fixes for mobile */
+    .modal-body {
+        padding: 20px 20px 40px 20px; /* Reduce side padding on mobile */
+    }
+    
+    .modal-content {
+        width: 95%; /* Take up more screen width */
+        max-height: 95vh;
+    }
+    
+    /* Footer on mobile */
+    .site-footer {
+        margin-top: 40px;
+        padding: 20px 0;
+    }
+    
+    .footer-tagline {
+        font-size: 14px;
+    }
+    
+    .footer-contact {
+        font-size: 13px;
+        padding: 6px 12px;
     }
 }
