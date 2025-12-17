@@ -569,6 +569,21 @@ rideForm.addEventListener('submit', async (e) => {
         // Success!
         alert('✅ Thank you! Your ride info has been submitted successfully.');
         
+        // Save user's info to localStorage for pre-filling emails
+        localStorage.setItem('dawaShare_userInfo', JSON.stringify({
+            firstName: data.firstName,
+            lastName: data.lastName,
+            depDate: data.depDate,
+            depTime: data.depTime,
+            depAirport: data.depAirport,
+            depAirline: data.depAirline,
+            arrDate: data.arrDate,
+            arrTime: data.arrTime,
+            arrAirport: data.arrAirport,
+            arrAirline: data.arrAirline,
+            location: data.location
+        }));
+        
         // Reset form and close modal
         rideForm.reset();
         modal.classList.remove('active');
@@ -805,6 +820,109 @@ function displayRides(rides) {
             airportAirlineText += ' Airport TBD';
         }
         
+        // Create pre-filled email with subject and body
+        // Try to get user's stored info from localStorage
+        const userInfo = JSON.parse(localStorage.getItem('dawaShare_userInfo') || '{}');
+        
+        let emailBody = `Hi ${ride['First Name']},\n\n` +
+            `I found your ride on dawaShare and I'm traveling around the same time!\n\n`;
+        
+        // Add recipient's info as context
+        emailBody += `You're ${currentTab === 'departures' ? 'departing' : 'arriving'} on ${formatDate(date)} at ${formattedTime} from ${airportCode || 'TBD'}${airline ? ` (${airline})` : ''}.\n\n`;
+        
+        // If we have user's info, include ONLY the relevant travel details based on current tab
+        if (userInfo.firstName) {
+            emailBody += `Here's my travel info:\n`;
+            
+            if (currentTab === 'departures') {
+                // On departures tab - only show departure info
+                if (userInfo.depDate && userInfo.depTime) {
+                    const depAirportCode = userInfo.depAirport ? userInfo.depAirport.split(' ')[0] : 'TBD';
+                    
+                    // Parse user's departure time
+                    let userDepTime = 'TBD';
+                    if (userInfo.depTime) {
+                        const timeStr = String(userInfo.depTime).trim();
+                        if (timeStr.includes('T')) {
+                            const timePart = timeStr.split('T')[1];
+                            const [hours, minutes] = timePart.split(':');
+                            const hours24 = parseInt(hours);
+                            const ampm = hours24 >= 12 ? 'PM' : 'AM';
+                            const hours12 = hours24 % 12 || 12;
+                            userDepTime = `${hours12}:${minutes} ${ampm}`;
+                        } else if (timeStr.includes(':')) {
+                            const [hours, minutes] = timeStr.split(':');
+                            const hours24 = parseInt(hours);
+                            const ampm = hours24 >= 12 ? 'PM' : 'AM';
+                            const hours12 = hours24 % 12 || 12;
+                            userDepTime = `${hours12}:${minutes} ${ampm}`;
+                        }
+                    }
+                    
+                    emailBody += `• Departing: ${formatDate(userInfo.depDate)} at ${userDepTime} from ${depAirportCode}`;
+                    if (userInfo.depAirline) {
+                        emailBody += ` (${userInfo.depAirline})`;
+                    }
+                    emailBody += `\n`;
+                } else {
+                    emailBody += `• Departing: [ ADD YOUR DEPARTURE DETAILS ]\n`;
+                }
+            } else {
+                // On arrivals tab - only show arrival info
+                if (userInfo.arrDate && userInfo.arrTime) {
+                    const arrAirportCode = userInfo.arrAirport ? userInfo.arrAirport.split(' ')[0] : 'TBD';
+                    
+                    // Parse user's arrival time
+                    let userArrTime = 'TBD';
+                    if (userInfo.arrTime) {
+                        const timeStr = String(userInfo.arrTime).trim();
+                        if (timeStr.includes('T')) {
+                            const timePart = timeStr.split('T')[1];
+                            const [hours, minutes] = timePart.split(':');
+                            const hours24 = parseInt(hours);
+                            const ampm = hours24 >= 12 ? 'PM' : 'AM';
+                            const hours12 = hours24 % 12 || 12;
+                            userArrTime = `${hours12}:${minutes} ${ampm}`;
+                        } else if (timeStr.includes(':')) {
+                            const [hours, minutes] = timeStr.split(':');
+                            const hours24 = parseInt(hours);
+                            const ampm = hours24 >= 12 ? 'PM' : 'AM';
+                            const hours12 = hours24 % 12 || 12;
+                            userArrTime = `${hours12}:${minutes} ${ampm}`;
+                        }
+                    }
+                    
+                    emailBody += `• Arriving: ${formatDate(userInfo.arrDate)} at ${userArrTime} to ${arrAirportCode}`;
+                    if (userInfo.arrAirline) {
+                        emailBody += ` (${userInfo.arrAirline})`;
+                    }
+                    emailBody += `\n`;
+                } else {
+                    emailBody += `• Arriving: [ ADD YOUR ARRIVAL DETAILS ]\n`;
+                }
+            }
+            
+            // Always prompt for location (whether they have it or not)
+            if (userInfo.location) {
+                emailBody += `• Location: ${userInfo.location}\n`;
+            } else {
+                emailBody += `• Location: [ ADD YOUR LOCATION ]\n`;
+            }
+            
+            emailBody += `\nWould you be interested in sharing a ride?\n\n`;
+            emailBody += `Best,\n${userInfo.firstName}`;
+        } else {
+            // No stored info - use simple template
+            emailBody += `I'd love to share a ride if our times work out. Here are my travel details:\n\n`;
+            emailBody += `• ${currentTab === 'departures' ? 'Departing' : 'Arriving'}: [ ADD YOUR ${currentTab === 'departures' ? 'DEPARTURE' : 'ARRIVAL'} INFO HERE ]\n`;
+            emailBody += `• Location: [ ADD YOUR LOCATION HERE ]\n\n`;
+            emailBody += `Let me know if you're interested!\n\n`;
+            emailBody += `Best,\n[Your name]`;
+        }
+        
+        const emailSubject = encodeURIComponent('dawaShare: Let\'s share a ride!');
+        const mailtoLink = `mailto:${ride['Email']}?subject=${emailSubject}&body=${encodeURIComponent(emailBody)}`;
+        
         html += `
             <div class="ride-card">
                 <div class="card-header">
@@ -822,10 +940,10 @@ function displayRides(rides) {
                 
                 <div class="card-actions">
                     ${ride['Phone'] ? `
-                        <a href="mailto:${ride['Email']}" class="contact-btn">✉️ Email</a>
+                        <a href="${mailtoLink}" class="contact-btn">✉️ Email</a>
                         <a href="sms:${ride['Phone']}" class="contact-btn phone-btn">💬 Text</a>
                     ` : `
-                        <a href="mailto:${ride['Email']}" class="contact-btn contact-btn-full">✉️ Email</a>
+                        <a href="${mailtoLink}" class="contact-btn contact-btn-full">✉️ Email</a>
                     `}
                 </div>
             </div>
