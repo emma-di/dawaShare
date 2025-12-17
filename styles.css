@@ -245,11 +245,10 @@ h1 {
 .form-section {
     margin-bottom: 30px;
     padding-bottom: 30px;
-    border-bottom: 1px solid var(--border-gray);
 }
 
 .form-section:last-of-type {
-    border-bottom: none;
+    padding-bottom: 200px; /* Extra space so dropdown doesn't overlap submit buttons */
 }
 
 .section-header {
@@ -437,10 +436,11 @@ select {
     background-position: right 16px center;
     padding-right: 40px;
     cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); /* Subtle shadow for distinction */
 }
 
 select:focus {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Stronger shadow when open */
 }
 
 /* Limit dropdown height on mobile */
