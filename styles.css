@@ -234,7 +234,8 @@ h1 {
     padding: 8px 12px;
     border-top: 1px solid var(--border-gray);
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 8px;
     background: var(--light-gray);
 }
 
@@ -253,6 +254,23 @@ h1 {
 .clear-filter-btn:hover {
     background: var(--cardinal);
     color: white;
+}
+
+.done-filter-btn {
+    background: var(--cardinal);
+    border: 2px solid var(--cardinal);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 20px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.done-filter-btn:hover {
+    background: var(--cardinal-dark);
+    border-color: var(--cardinal-dark);
 }
 
 .filter-option {

@@ -96,42 +96,76 @@ const locationFilterPanel = document.getElementById('locationFilterPanel');
 // Toggle dropdown panels
 dateFilterBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    dateFilterBtn.classList.toggle('active');
-    dateFilterPanel.classList.toggle('active');
-    timeFilterPanel.classList.remove('active');
-    timeFilterBtn.classList.remove('active');
-    locationFilterPanel.classList.remove('active');
-    locationFilterBtn.classList.remove('active');
+    const isActive = dateFilterBtn.classList.contains('active');
+    // Close all dropdowns
+    closeAllDropdowns();
+    // Toggle this one
+    if (!isActive) {
+        dateFilterBtn.classList.add('active');
+        dateFilterPanel.classList.add('active');
+    }
 });
 
 timeFilterBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    timeFilterBtn.classList.toggle('active');
-    timeFilterPanel.classList.toggle('active');
-    dateFilterPanel.classList.remove('active');
-    dateFilterBtn.classList.remove('active');
-    locationFilterPanel.classList.remove('active');
-    locationFilterBtn.classList.remove('active');
+    const isActive = timeFilterBtn.classList.contains('active');
+    closeAllDropdowns();
+    if (!isActive) {
+        timeFilterBtn.classList.add('active');
+        timeFilterPanel.classList.add('active');
+    }
 });
 
 locationFilterBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    locationFilterBtn.classList.toggle('active');
-    locationFilterPanel.classList.toggle('active');
-    dateFilterPanel.classList.remove('active');
-    dateFilterBtn.classList.remove('active');
-    timeFilterPanel.classList.remove('active');
-    timeFilterBtn.classList.remove('active');
+    const isActive = locationFilterBtn.classList.contains('active');
+    closeAllDropdowns();
+    if (!isActive) {
+        locationFilterBtn.classList.add('active');
+        locationFilterPanel.classList.add('active');
+    }
 });
 
-// Close dropdowns when clicking outside
-document.addEventListener('click', () => {
+// Prevent dropdown from closing when clicking inside
+dateFilterPanel.addEventListener('click', (e) => {
+    e.stopPropagation();
+});
+
+timeFilterPanel.addEventListener('click', (e) => {
+    e.stopPropagation();
+});
+
+locationFilterPanel.addEventListener('click', (e) => {
+    e.stopPropagation();
+});
+
+// Close all dropdowns helper
+function closeAllDropdowns() {
     dateFilterPanel.classList.remove('active');
     dateFilterBtn.classList.remove('active');
     timeFilterPanel.classList.remove('active');
     timeFilterBtn.classList.remove('active');
     locationFilterPanel.classList.remove('active');
     locationFilterBtn.classList.remove('active');
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', closeAllDropdowns);
+
+// Done buttons
+document.getElementById('doneDateBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeAllDropdowns();
+});
+
+document.getElementById('doneTimeBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeAllDropdowns();
+});
+
+document.getElementById('doneLocationBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeAllDropdowns();
 });
 
 // Clear All buttons
