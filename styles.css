@@ -439,6 +439,18 @@ select {
     cursor: pointer;
 }
 
+select:focus {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Limit dropdown height on mobile */
+@media (max-height: 700px) {
+    select {
+        /* Browser will handle scrolling within dropdown automatically */
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}
+
 /* ===== Form Actions ===== */
 .form-actions {
     display: flex;
@@ -550,4 +562,110 @@ select {
 .unknown {
     color: #999;
     font-style: italic;
+}
+
+/* ===== Ride Cards Display ===== */
+.rides-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.ride-card {
+    background: white;
+    border: 2px solid var(--border-gray);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.ride-card:hover {
+    border-color: var(--cardinal);
+    box-shadow: 0 4px 12px var(--shadow);
+    transform: translateY(-2px);
+}
+
+.ride-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--light-gray);
+}
+
+.ride-header h3 {
+    font-size: 18px;
+    color: var(--cardinal);
+    margin: 0;
+}
+
+.ride-date {
+    font-size: 14px;
+    color: var(--cool-gray);
+    font-weight: 600;
+}
+
+.ride-details {
+    margin-bottom: 15px;
+}
+
+.ride-section {
+    margin-bottom: 12px;
+}
+
+.ride-section strong {
+    color: var(--cool-gray);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ride-section p {
+    margin: 5px 0;
+    font-size: 15px;
+}
+
+.airline {
+    color: #666;
+    font-size: 13px;
+}
+
+.location {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--light-gray);
+    color: var(--cool-gray);
+    font-size: 14px;
+}
+
+.ride-contact {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.contact-btn {
+    flex: 1;
+    padding: 10px;
+    background: var(--cardinal);
+    color: white;
+    text-decoration: none;
+    text-align: center;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.contact-btn:hover {
+    background: var(--cardinal-dark);
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .rides-grid {
+        grid-template-columns: 1fr;
+    }
 }

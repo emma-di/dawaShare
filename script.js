@@ -1,5 +1,5 @@
 // ===== CONFIGURATION =====
-const GOOGLE_SHEET_URL = 'YOUR_WEB_APP_URL_HERE'; // Paste your Google Sheets Web App URL here!
+const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz3tCsxyBNcBZZA2JfEKE71Am54hSCoak2rFQqy3_x5tCEf1MbV9z9wrHu2xou1XO2o/exec';
 
 // ===== POPULATE DROPDOWNS =====
 function populateDropdowns() {
