@@ -27,13 +27,19 @@ const AIRPORTS = [
 ];
 
 const AIRLINES = [
-    'Alaska Airlines',
-    'American Airlines',
-    'Delta Air Lines',
-    'Frontier Airlines',
-    'JetBlue Airways',
-    'Southwest Airlines',
-    'Spirit Airlines',
-    'United Airlines',
+    'Air Canada',
+    'Alaska',
+    'American',
+    'British Airways',
+    'Delta',
+    'Emirates',
+    'Frontier',
+    'Hawaiian',
+    'JetBlue',
+    'Korean Air',
+    'Southwest',
+    'Spirit',
+    'Turkish',
+    'United',
     'Other'
 ];
