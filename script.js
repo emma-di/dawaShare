@@ -230,6 +230,10 @@ async function loadRides() {
 function displayRides(rides) {
     const ridesTable = document.getElementById('ridesTable');
     
+    console.log('=== displayRides called ===');
+    console.log('Total rides received:', rides.length);
+    console.log('First ride data:', rides[0]);
+    
     // Filter rides based on current tab
     const filteredRides = rides.filter(ride => {
         if (currentTab === 'departures') {
@@ -241,6 +245,8 @@ function displayRides(rides) {
         }
     });
     
+    console.log('Filtered rides for', currentTab, ':', filteredRides.length);
+    
     if (filteredRides.length === 0) {
         ridesTable.innerHTML = `<p class="empty-state">No ${currentTab} yet. Be the first to share your ride info!</p>`;
         return;
@@ -249,6 +255,11 @@ function displayRides(rides) {
     let html = '<div class="rides-grid">';
     
     filteredRides.forEach(ride => {
+        console.log('--- Processing ride ---');
+        console.log('Name:', ride['First Name'], ride['Last Name']);
+        console.log('Dep Time:', ride['Dep Time']);
+        console.log('Arr Time:', ride['Arr Time']);
+        
         // Determine which info to show based on current tab
         let date, time, airport, airline, icon;
         
@@ -274,27 +285,36 @@ function displayRides(rides) {
             console.log('Time string after trim:', timeStr);
             
             if (timeStr && timeStr !== '' && timeStr !== 'undefined' && timeStr !== 'null') {
-                if (timeStr.includes(':')) {
+                let hours24, minutes;
+                
+                // Check if it's an ISO datetime format (e.g., "1899-12-30T23:00:00.000Z")
+                if (timeStr.includes('T') && timeStr.includes(':')) {
+                    // Extract time portion after 'T'
+                    const timePortion = timeStr.split('T')[1].split('.')[0]; // Gets "23:00:00"
+                    const [hourStr, minuteStr] = timePortion.split(':');
+                    hours24 = parseInt(hourStr, 10);
+                    minutes = minuteStr;
+                    console.log('Parsed from ISO format - hours24:', hours24, 'minutes:', minutes);
+                } else if (timeStr.includes(':')) {
+                    // Regular HH:MM format
                     const [hourStr, minuteStr] = timeStr.split(':');
-                    const hours24 = parseInt(hourStr, 10);
-                    const minutes = minuteStr ? minuteStr.substring(0, 2) : '00';
-                    
-                    console.log('Parsed hours24:', hours24, 'minutes:', minutes);
-                    
-                    if (!isNaN(hours24) && hours24 >= 0 && hours24 <= 23) {
-                        const ampm = hours24 >= 12 ? 'PM' : 'AM';
-                        const hours12 = hours24 % 12 || 12;
-                        formattedTime = `${hours12}:${minutes} ${ampm}`;
-                        console.log('Formatted time:', formattedTime);
-                    }
+                    hours24 = parseInt(hourStr, 10);
+                    minutes = minuteStr ? minuteStr.substring(0, 2) : '00';
+                    console.log('Parsed from HH:MM format - hours24:', hours24, 'minutes:', minutes);
                 } else {
                     // Try parsing as just a number
-                    const hours24 = parseInt(timeStr, 10);
-                    if (!isNaN(hours24) && hours24 >= 0 && hours24 <= 23) {
-                        const ampm = hours24 >= 12 ? 'PM' : 'AM';
-                        const hours12 = hours24 % 12 || 12;
-                        formattedTime = `${hours12}:00 ${ampm}`;
-                    }
+                    hours24 = parseInt(timeStr, 10);
+                    minutes = '00';
+                    console.log('Parsed as number - hours24:', hours24);
+                }
+                
+                console.log('Parsed hours24:', hours24, 'minutes:', minutes);
+                
+                if (!isNaN(hours24) && hours24 >= 0 && hours24 <= 23) {
+                    const ampm = hours24 >= 12 ? 'PM' : 'AM';
+                    const hours12 = hours24 % 12 || 12;
+                    formattedTime = `${hours12}:${minutes} ${ampm}`;
+                    console.log('Formatted time:', formattedTime);
                 }
             }
         } else {
