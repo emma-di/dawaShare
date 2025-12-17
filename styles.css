@@ -224,31 +224,35 @@ h1 {
     display: block;
 }
 
-.filter-panel-header {
+.filter-options {
+    padding: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.filter-panel-footer {
     padding: 8px 12px;
-    border-bottom: 1px solid var(--border-gray);
+    border-top: 1px solid var(--border-gray);
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
+    background: var(--light-gray);
 }
 
 .clear-filter-btn {
-    background: transparent;
-    border: none;
+    background: white;
+    border: 2px solid var(--cardinal);
     color: var(--cardinal);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: background 0.2s ease;
+    padding: 6px 16px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
 }
 
 .clear-filter-btn:hover {
-    background: var(--light-gray);
-}
-
-.filter-options {
-    padding: 8px;
+    background: var(--cardinal);
+    color: white;
 }
 
 .filter-option {
