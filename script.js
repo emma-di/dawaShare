@@ -1,47 +1,5 @@
-// ===== DROPDOWN DATA =====
-// UPDATE THESE ARRAYS WITH YOUR REAL VALUES
-
-const LOCATIONS = [
-  'Branner',
-  'Casper Quad',
-  'Crothers / Crothers Memorial (CroMem)',
-  'EVGR',
-  'Florence Moore',
-  'GovCo',
-  'Lagunita Court',
-  'Mirrielees',
-  'Roble',
-  'Row: Lower (closer to Tresidder)',
-  'Row: Upper (further from Tresidder)',
-  'Stern',
-  'Toyon',
-  'Wilbur',
-  'Other / Off-Campus (explain below)'
-];
-
-const AIRPORTS = [
-    'SFO - San Francisco International',
-    'SJC - San Jose International',
-    'OAK - Oakland International'
-];
-
-const AIRLINES = [
-  'Air Canada',
-  'Alaska',
-  'American',
-  'British Airways',
-  'Delta',
-  'Frontier',
-  'Hawaiian',
-  'JetBlue',
-  'Korean Air',
-  'Lufthansa',
-  'Singapore',
-  'Southwest',
-  'Spirit',
-  'United',
-  'Other'
-];
+// ===== CONFIGURATION =====
+const GOOGLE_SHEET_URL = 'YOUR_WEB_APP_URL_HERE'; // Paste your Google Sheets Web App URL here!
 
 // ===== POPULATE DROPDOWNS =====
 function populateDropdowns() {
@@ -58,6 +16,15 @@ function populateDropdowns() {
     const airportSelects = ['depAirport', 'arrAirport'];
     airportSelects.forEach(selectId => {
         const select = document.getElementById(selectId);
+        
+        // Add "Unknown yet" option for arrival airport
+        if (selectId === 'arrAirport') {
+            const unknownOption = document.createElement('option');
+            unknownOption.value = 'Unknown yet';
+            unknownOption.textContent = 'Unknown yet';
+            select.appendChild(unknownOption);
+        }
+        
         AIRPORTS.forEach(airport => {
             const option = document.createElement('option');
             option.value = airport;
@@ -70,6 +37,15 @@ function populateDropdowns() {
     const airlineSelects = ['depAirline', 'arrAirline'];
     airlineSelects.forEach(selectId => {
         const select = document.getElementById(selectId);
+        
+        // Add "Unknown yet" option for arrival airline
+        if (selectId === 'arrAirline') {
+            const unknownOption = document.createElement('option');
+            unknownOption.value = 'Unknown yet';
+            unknownOption.textContent = 'Unknown yet';
+            select.appendChild(unknownOption);
+        }
+        
         AIRLINES.forEach(airline => {
             const option = document.createElement('option');
             option.value = airline;
@@ -86,18 +62,6 @@ const closeBtn = document.getElementById('closeBtn');
 const alreadySubmittedBtn = document.getElementById('alreadySubmittedBtn');
 const rideForm = document.getElementById('rideForm');
 
-// Open modal on page load
-window.addEventListener('DOMContentLoaded', () => {
-    populateDropdowns();
-    // Show modal automatically on page load
-    modal.classList.add('active');
-});
-
-// Open modal when clicking "Add Your Ride" button
-openFormBtn.addEventListener('click', () => {
-    modal.classList.add('active');
-});
-
 // Close modal when clicking X button
 closeBtn.addEventListener('click', () => {
     modal.classList.remove('active');
@@ -106,6 +70,11 @@ closeBtn.addEventListener('click', () => {
 // Close modal when clicking "Already submitted / Unsure rn" button
 alreadySubmittedBtn.addEventListener('click', () => {
     modal.classList.remove('active');
+});
+
+// Open modal when clicking "Add Your Ride" button
+openFormBtn.addEventListener('click', () => {
+    modal.classList.add('active');
 });
 
 // Close modal when clicking outside the modal content
@@ -121,9 +90,6 @@ document.addEventListener('keydown', (e) => {
         modal.classList.remove('active');
     }
 });
-
-// ===== CONFIGURATION =====
-const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz3tCsxyBNcBZZA2JfEKE71Am54hSCoak2rFQqy3_x5tCEf1MbV9z9wrHu2xou1XO2o/exec'; // Paste your URL here!
 
 // ===== FORM SUBMISSION =====
 rideForm.addEventListener('submit', async (e) => {
@@ -141,6 +107,10 @@ rideForm.addEventListener('submit', async (e) => {
     formData.forEach((value, key) => {
         data[key] = value;
     });
+    
+    // Combine email parts into full email
+    data.email = data.emailUsername + '@stanford.edu';
+    delete data.emailUsername; // Remove the username-only field
     
     try {
         // Send data to Google Sheets
@@ -186,6 +156,7 @@ async function loadRides() {
         }
     } catch (error) {
         console.error('Error loading rides:', error);
+        document.getElementById('ridesTable').innerHTML = '<p class="empty-state">No rides yet. Be the first to share your ride info!</p>';
     }
 }
 
@@ -204,14 +175,14 @@ function displayRides(rides) {
                 </div>
                 <div class="ride-details">
                     <div class="ride-section">
-                        <strong>Departure:</strong>
+                        <strong>🛫 Departure:</strong>
                         <p>${ride['Dep Airport']} at ${ride['Dep Time']}</p>
                         ${ride['Dep Airline'] ? `<p class="airline">${ride['Dep Airline']}</p>` : ''}
                     </div>
                     <div class="ride-section">
-                        <strong>Arrival:</strong>
-                        <p>${ride['Arr Airport']} at ${ride['Arr Time']}</p>
-                        ${ride['Arr Airline'] ? `<p class="airline">${ride['Arr Airline']}</p>` : ''}
+                        <strong>🛬 Arrival:</strong>
+                        ${ride['Arr Date'] ? `<p>${ride['Arr Airport']} at ${ride['Arr Time']}</p>` : '<p class="unknown">Unknown yet</p>'}
+                        ${ride['Arr Airline'] && ride['Arr Airline'] !== 'Unknown yet' ? `<p class="airline">${ride['Arr Airline']}</p>` : ''}
                     </div>
                     ${ride['Location'] ? `<p class="location">📍 ${ride['Location']}</p>` : ''}
                 </div>
@@ -229,26 +200,21 @@ function displayRides(rides) {
 
 // ===== HELPER FUNCTION =====
 function formatDate(dateString) {
+    if (!dateString) return 'Date TBD';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-// Load rides when page loads
-window.addEventListener('DOMContentLoaded', () => {
-    populateDropdowns();
-    loadRides();
-    // Show modal automatically on page load
-    modal.classList.add('active');
-});
+// ===== EMAIL FIELD FORMATTING =====
+const emailInput = document.getElementById('emailUsername');
 
-// ===== EMAIL VALIDATION =====
-const emailInput = document.getElementById('email');
-emailInput.addEventListener('blur', () => {
-    const email = emailInput.value;
-    if (email && !email.endsWith('@stanford.edu')) {
-        alert('Please use your Stanford email address (@stanford.edu)');
-        emailInput.focus();
-    }
+// Validate email username (no special characters except . and _)
+emailInput.addEventListener('input', (e) => {
+    let value = e.target.value;
+    // Remove any @ symbols or invalid characters
+    value = value.replace(/@.*$/, ''); // Remove anything after @
+    value = value.replace(/[^a-zA-Z0-9._-]/g, ''); // Only allow letters, numbers, dots, underscores, hyphens
+    e.target.value = value.toLowerCase();
 });
 
 // ===== PHONE NUMBER FORMATTING =====
@@ -271,3 +237,16 @@ phoneInput.addEventListener('input', (e) => {
 const today = new Date().toISOString().split('T')[0];
 document.getElementById('depDate').setAttribute('min', today);
 document.getElementById('arrDate').setAttribute('min', today);
+
+// Make arrival fields optional
+document.getElementById('arrDate').removeAttribute('required');
+document.getElementById('arrTime').removeAttribute('required');
+document.getElementById('arrAirport').removeAttribute('required');
+
+// Load rides and show modal when page loads
+window.addEventListener('DOMContentLoaded', () => {
+    populateDropdowns();
+    loadRides();
+    // Show modal automatically on page load
+    modal.classList.add('active');
+});
