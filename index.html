@@ -29,6 +29,53 @@
                 <button class="tab-btn" data-tab="arrivals">Arrivals</button>
             </div>
             
+            <!-- Filters -->
+            <div class="filters-container">
+                <!-- Date Filter (Multi-select) -->
+                <div class="filter-dropdown">
+                    <button class="filter-dropdown-btn" id="dateFilterBtn">
+                        All Dates
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="filter-dropdown-panel" id="dateFilterPanel">
+                        <div class="filter-options" id="dateFilterOptions">
+                            <!-- Checkboxes will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Airport Filter (Single select) -->
+                <select id="filterAirport" class="filter-select">
+                    <option value="">All Airports</option>
+                </select>
+                
+                <!-- Time Filter (Multi-select) -->
+                <div class="filter-dropdown">
+                    <button class="filter-dropdown-btn" id="timeFilterBtn">
+                        All Times
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="filter-dropdown-panel" id="timeFilterPanel">
+                        <div class="filter-options" id="timeFilterOptions">
+                            <!-- Checkboxes will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Location Filter (Multi-select) -->
+                <div class="filter-dropdown">
+                    <button class="filter-dropdown-btn" id="locationFilterBtn">
+                        All Locations
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="filter-dropdown-panel" id="locationFilterPanel">
+                        <div class="filter-options" id="locationFilterOptions">
+                            <!-- Checkboxes will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div id="ridesTable">
                 <!-- Rides will be displayed here -->
                 <p class="empty-state">No rides yet. Be the first to share your ride info!</p>
@@ -68,7 +115,7 @@
                         <div class="form-group full-width">
                             <label for="emailUsername">Student Email <span class="required">*</span></label>
                             <div class="email-input-wrapper">
-                                <input type="text" id="emailUsername" name="emailUsername" placeholder="SUNet ID" required>
+                                <input type="text" id="emailUsername" name="emailUsername" placeholder="sunet" required>
                                 <span class="email-domain">@stanford.edu</span>
                             </div>
                         </div>

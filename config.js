@@ -6,6 +6,7 @@ const LOCATIONS = [
   'Branner Hall',
   'Casper Quad',
   'Crothers / Crothers Memorial (CroMem)',
+  'Cowell Lane',
   'EVGR',
   'Florence Moore Hall',
   'GovCo',

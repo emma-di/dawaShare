@@ -128,6 +128,134 @@ h1 {
     border-bottom-color: var(--cardinal);
 }
 
+/* ===== Filters ===== */
+.filters-container {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.filter-select {
+    padding: 10px 16px;
+    border: 2px solid var(--border-gray);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 140px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234D4F53' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+.filter-select:hover {
+    border-color: var(--cardinal);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--cardinal);
+    box-shadow: 0 0 0 3px rgba(140, 21, 21, 0.1);
+}
+
+/* Checkbox dropdown filters */
+.filter-dropdown {
+    position: relative;
+    min-width: 140px;
+}
+
+.filter-dropdown-btn {
+    width: 100%;
+    padding: 10px 16px;
+    border: 2px solid var(--border-gray);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+}
+
+.filter-dropdown-btn:hover {
+    border-color: var(--cardinal);
+}
+
+.filter-dropdown-btn.active {
+    border-color: var(--cardinal);
+    box-shadow: 0 0 0 3px rgba(140, 21, 21, 0.1);
+}
+
+.dropdown-arrow {
+    font-size: 10px;
+    color: var(--cool-gray);
+    transition: transform 0.2s ease;
+}
+
+.filter-dropdown-btn.active .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.filter-dropdown-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: white;
+    border: 2px solid var(--cardinal);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--shadow);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 100;
+    display: none;
+}
+
+.filter-dropdown-panel.active {
+    display: block;
+}
+
+.filter-options {
+    padding: 8px;
+}
+
+.filter-option {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.filter-option:hover {
+    background: var(--light-gray);
+}
+
+.filter-option input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--cardinal);
+}
+
+.filter-option label {
+    cursor: pointer;
+    font-size: 14px;
+    margin: 0;
+    flex: 1;
+}
+
 .empty-state {
     text-align: center;
     padding: 60px 20px;
