@@ -58,6 +58,33 @@ const closeBtn = document.getElementById('closeBtn');
 const alreadySubmittedBtn = document.getElementById('alreadySubmittedBtn');
 const rideForm = document.getElementById('rideForm');
 
+// ===== NAME AUTO-CAPITALIZATION =====
+const firstNameInput = document.getElementById('firstName');
+const lastNameInput = document.getElementById('lastName');
+
+// Capitalize first letter when user leaves the field
+function capitalizeName(input) {
+    if (input.value) {
+        // Split by spaces to handle multiple words
+        const words = input.value.split(' ');
+        const capitalizedWords = words.map(word => {
+            if (word.length > 0) {
+                return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            }
+            return word;
+        });
+        input.value = capitalizedWords.join(' ');
+    }
+}
+
+firstNameInput.addEventListener('blur', function() {
+    capitalizeName(this);
+});
+
+lastNameInput.addEventListener('blur', function() {
+    capitalizeName(this);
+});
+
 // ===== TAB FUNCTIONALITY =====
 let currentTab = 'departures'; // Track which tab is active
 let allRidesData = []; // Store all rides data (cached)
