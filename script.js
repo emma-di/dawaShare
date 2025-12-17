@@ -3,8 +3,12 @@ const GOOGLE_SHEET_URL = 'YOUR_WEB_APP_URL_HERE'; // Paste your Google Sheets We
 
 // ===== POPULATE DROPDOWNS =====
 function populateDropdowns() {
-    // Populate Location dropdowns
+    // Populate Location dropdown
     const locationSelect = document.getElementById('location');
+    // Keep the first "Select location..." option, remove the rest
+    while (locationSelect.options.length > 1) {
+        locationSelect.remove(1);
+    }
     LOCATIONS.forEach(location => {
         const option = document.createElement('option');
         option.value = location;
@@ -16,6 +20,10 @@ function populateDropdowns() {
     const airportSelects = ['depAirport', 'arrAirport'];
     airportSelects.forEach(selectId => {
         const select = document.getElementById(selectId);
+        // Keep the first "Select airport..." option, remove the rest
+        while (select.options.length > 1) {
+            select.remove(1);
+        }
         
         // Add "Unknown yet" option for arrival airport
         if (selectId === 'arrAirport') {
@@ -37,6 +45,10 @@ function populateDropdowns() {
     const airlineSelects = ['depAirline', 'arrAirline'];
     airlineSelects.forEach(selectId => {
         const select = document.getElementById(selectId);
+        // Keep the first "Select airline..." option, remove the rest
+        while (select.options.length > 1) {
+            select.remove(1);
+        }
         
         // Add "Unknown yet" option for arrival airline
         if (selectId === 'arrAirline') {
