@@ -1,6 +1,3 @@
-// ===== CONFIGURATION =====
-const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz3tCsxyBNcBZZA2JfEKE71Am54hSCoak2rFQqy3_x5tCEf1MbV9z9wrHu2xou1XO2o/exec';
-
 // ===== POPULATE DROPDOWNS =====
 function populateDropdowns() {
     // Populate Location dropdown
@@ -95,7 +92,8 @@ let filters = {
     dates: [],
     airport: '',
     times: [],
-    locations: []
+    locations: [],
+    types: [] // 'shuttle' or 'individual'
 };
 
 const tabButtons = document.querySelectorAll('.tab-btn');
@@ -122,6 +120,8 @@ const timeFilterBtn = document.getElementById('timeFilterBtn');
 const timeFilterPanel = document.getElementById('timeFilterPanel');
 const locationFilterBtn = document.getElementById('locationFilterBtn');
 const locationFilterPanel = document.getElementById('locationFilterPanel');
+const typeFilterBtn = document.getElementById('typeFilterBtn');
+const typeFilterPanel = document.getElementById('typeFilterPanel');
 
 // Toggle dropdown panels
 dateFilterBtn.addEventListener('click', (e) => {
@@ -156,6 +156,16 @@ locationFilterBtn.addEventListener('click', (e) => {
     }
 });
 
+typeFilterBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isActive = typeFilterBtn.classList.contains('active');
+    closeAllDropdowns();
+    if (!isActive) {
+        typeFilterBtn.classList.add('active');
+        typeFilterPanel.classList.add('active');
+    }
+});
+
 // Prevent dropdown from closing when clicking inside
 dateFilterPanel.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -169,6 +179,10 @@ locationFilterPanel.addEventListener('click', (e) => {
     e.stopPropagation();
 });
 
+typeFilterPanel.addEventListener('click', (e) => {
+    e.stopPropagation();
+});
+
 // Close all dropdowns helper
 function closeAllDropdowns() {
     dateFilterPanel.classList.remove('active');
@@ -177,6 +191,8 @@ function closeAllDropdowns() {
     timeFilterBtn.classList.remove('active');
     locationFilterPanel.classList.remove('active');
     locationFilterBtn.classList.remove('active');
+    typeFilterPanel.classList.remove('active');
+    typeFilterBtn.classList.remove('active');
 }
 
 // Close dropdowns when clicking outside
@@ -194,6 +210,11 @@ document.getElementById('doneTimeBtn').addEventListener('click', (e) => {
 });
 
 document.getElementById('doneLocationBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeAllDropdowns();
+});
+
+document.getElementById('doneTypeBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     closeAllDropdowns();
 });
@@ -226,6 +247,31 @@ document.getElementById('clearLocationBtn').addEventListener('click', (e) => {
     populateLocationFilter(allRidesData);
 });
 
+document.getElementById('clearTypeBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    filters.types = [];
+    updateFilterButtonText('typeFilterBtn', [], 'All Types');
+    displayRides(allRidesData);
+    // Uncheck all type checkboxes
+    document.querySelectorAll('#typeFilterOptions input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+    });
+});
+
+// Type filter checkboxes
+document.querySelectorAll('#typeFilterOptions input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener('change', (e) => {
+        const type = e.target.value;
+        if (e.target.checked) {
+            filters.types.push(type);
+        } else {
+            filters.types = filters.types.filter(t => t !== type);
+        }
+        updateFilterButtonText('typeFilterBtn', filters.types, 'All Types');
+        displayRides(allRidesData);
+    });
+});
+
 // Airport filter (single select)
 filterAirport.addEventListener('change', (e) => {
     filters.airport = e.target.value;
@@ -246,6 +292,13 @@ function updateFilterButtonText(buttonId, filterArray, allText) {
         let displayText = filterArray[0];
         if (buttonId === 'dateFilterBtn') {
             displayText = formatDate(filterArray[0]);
+        } else if (buttonId === 'typeFilterBtn') {
+            // Format type filter display text
+            if (filterArray[0] === 'shuttle') {
+                displayText = 'Shuttles Only';
+            } else if (filterArray[0] === 'individual') {
+                displayText = 'Individuals Only';
+            }
         }
         button.childNodes[0].textContent = displayText + ' ';
     } else {
@@ -254,11 +307,16 @@ function updateFilterButtonText(buttonId, filterArray, allText) {
 }
 
 function resetFilters() {
-    filters = { dates: [], airport: '', times: [], locations: [] };
+    filters = { dates: [], airport: '', times: [], locations: [], types: [] };
     filterAirport.value = '';
     updateFilterButtonText('dateFilterBtn', [], 'All Dates');
     updateFilterButtonText('timeFilterBtn', [], 'All Times');
     updateFilterButtonText('locationFilterBtn', [], 'All Locations');
+    updateFilterButtonText('typeFilterBtn', [], 'All Types');
+    // Uncheck all type checkboxes
+    document.querySelectorAll('#typeFilterOptions input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+    });
     populateFilterDropdowns(allRidesData);
     displayRides(allRidesData);
 }
@@ -283,13 +341,27 @@ function populateDateFilter(rides) {
     const dates = new Set();
     tabFilteredRides.forEach(ride => {
         const date = currentTab === 'departures' ? ride['Dep Date'] : ride['Arr Date'];
-        if (date) dates.add(date);
+        if (date) {
+            // Normalize date to YYYY-MM-DD format (remove time portion if present)
+            const normalizedDate = date.split('T')[0];
+            dates.add(normalizedDate);
+        }
     });
+    
+    // Add shuttle dates to the set (Set automatically prevents duplicates)
+    const shuttles = currentTab === 'departures' ? DEPARTURE_SHUTTLES : ARRIVAL_SHUTTLES;
+    shuttles.forEach(shuttle => {
+        // Shuttle dates are already in YYYY-MM-DD format
+        dates.add(shuttle.date);
+    });
+    
+    // Convert to array and sort chronologically (not alphabetically)
+    const sortedDates = Array.from(dates).sort((a, b) => new Date(a) - new Date(b));
     
     // Populate date checkboxes
     const dateOptions = document.getElementById('dateFilterOptions');
     dateOptions.innerHTML = '';
-    Array.from(dates).sort().forEach(date => {
+    sortedDates.forEach(date => {
         const option = document.createElement('div');
         option.className = 'filter-option';
         const checkbox = document.createElement('input');
@@ -692,7 +764,9 @@ function displayRides(rides) {
     if (filters.dates.length > 0) {
         filteredRides = filteredRides.filter(ride => {
             const date = currentTab === 'departures' ? ride['Dep Date'] : ride['Arr Date'];
-            return filters.dates.includes(date);
+            // Normalize date to YYYY-MM-DD format before comparing
+            const normalizedDate = date ? date.split('T')[0] : '';
+            return filters.dates.includes(normalizedDate);
         });
     }
     
@@ -758,13 +832,108 @@ function displayRides(rides) {
         return 0;
     });
     
-    if (filteredRides.length === 0) {
+    let html = '<div class="rides-grid">';
+    
+    // ===== ADD SHUTTLE CARDS FIRST (PINNED TO TOP) =====
+    let shuttles = currentTab === 'departures' ? DEPARTURE_SHUTTLES : ARRIVAL_SHUTTLES;
+    
+    // Apply filters to shuttles
+    // Type filter
+    if (filters.types.length > 0) {
+        if (!filters.types.includes('shuttle')) {
+            // If shuttles not selected in type filter, don't show any shuttles
+            shuttles = [];
+        }
+    }
+    
+    // Date filter
+    if (filters.dates.length > 0) {
+        shuttles = shuttles.filter(shuttle => filters.dates.includes(shuttle.date));
+    }
+    
+    // Airport filter
+    if (filters.airport) {
+        shuttles = shuttles.filter(shuttle => shuttle.airport === filters.airport);
+    }
+    
+    // Time filter
+    if (filters.times.length > 0) {
+        shuttles = shuttles.filter(shuttle => {
+            const hours = parseInt(shuttle.time.split(':')[0]);
+            return filters.times.some(timeRange => {
+                if (timeRange === 'Early Morning (3-9am)') return hours >= 3 && hours < 9;
+                if (timeRange === 'Morning (9am-12pm)') return hours >= 9 && hours < 12;
+                if (timeRange === 'Afternoon (12-5pm)') return hours >= 12 && hours < 17;
+                if (timeRange === 'Evening (5-9pm)') return hours >= 17 && hours < 21;
+                if (timeRange === 'Night (9pm-3am)') return hours >= 21 || hours < 3;
+                return false;
+            });
+        });
+    }
+    
+    // Filter individual rides by type filter
+    if (filters.types.length > 0 && filters.types.includes('individual') && !filters.types.includes('shuttle')) {
+        // Show only individuals, shuttles already filtered out above
+    } else if (filters.types.length > 0 && !filters.types.includes('individual')) {
+        // Only shuttles selected, remove all individual rides
+        filteredRides = [];
+    }
+    
+    // Check if we have any results
+    if (filteredRides.length === 0 && shuttles.length === 0) {
         ridesTable.innerHTML = `<p class="empty-state">No ${currentTab} match your filters. Try adjusting your search!</p>`;
         return;
     }
     
-    let html = '<div class="rides-grid">';
+    shuttles.forEach(shuttle => {
+        const shuttleDate = new Date(shuttle.date);
+        const formattedDate = shuttleDate.toLocaleDateString('en-US', { 
+            weekday: 'short', 
+            month: 'numeric', 
+            day: 'numeric' 
+        });
+        
+        // Format time to 12-hour format
+        const [hours24, minutes] = shuttle.time.split(':');
+        const hours = parseInt(hours24);
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const hours12 = hours % 12 || 12;
+        const formattedTime = `${hours12}:${minutes} ${ampm}`;
+        
+        const icon = currentTab === 'departures' ? '🛫' : '🛬';
+        const airportText = `${icon} ${shuttle.airport}`;
+        
+        // Determine card classes
+        let cardClasses = 'ride-card shuttle-card';
+        if (shuttle.lowTickets) cardClasses += ' low-tickets';
+        if (shuttle.soldOut) cardClasses += ' sold-out';
+        
+        // Button text and class
+        const btnText = shuttle.soldOut ? 'Join Waitlist' : 'Buy Tickets ($5)';
+        const btnClass = shuttle.soldOut ? 'shuttle-buy-btn waitlist' : 'shuttle-buy-btn';
+        
+        html += `
+            <div class="${cardClasses}">
+                <div class="card-header">
+                    <div class="date-time">
+                        <span class="date-large">${formattedDate}</span>
+                        <span class="time-large">${formattedTime}</span>
+                    </div>
+                </div>
+                
+                <div class="card-info">
+                    <div class="card-airport-airline">${airportText}</div>
+                    <div class="card-location">🚌 Direct from campus</div>
+                </div>
+                
+                <div class="card-actions">
+                    <a href="${SHUTTLE_TICKET_URL}" target="_blank" class="${btnClass}">${btnText}</a>
+                </div>
+            </div>
+        `;
+    });
     
+    // ===== NOW ADD REGULAR RIDE CARDS =====
     filteredRides.forEach(ride => {
         console.log('--- Processing ride ---');
         console.log('Name:', ride['First Name'], ride['Last Name']);

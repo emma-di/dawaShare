@@ -48,6 +48,30 @@
                     </div>
                 </div>
                 
+                <!-- Type Filter (Multi-select) -->
+                <div class="filter-dropdown">
+                    <button class="filter-dropdown-btn" id="typeFilterBtn">
+                        All Types
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="filter-dropdown-panel" id="typeFilterPanel">
+                        <div class="filter-options" id="typeFilterOptions">
+                            <div class="filter-option">
+                                <input type="checkbox" id="type-shuttle" value="shuttle">
+                                <label for="type-shuttle">Shuttles Only</label>
+                            </div>
+                            <div class="filter-option">
+                                <input type="checkbox" id="type-individual" value="individual">
+                                <label for="type-individual">Individuals Only</label>
+                            </div>
+                        </div>
+                        <div class="filter-panel-footer">
+                            <button class="clear-filter-btn" id="clearTypeBtn">Clear All</button>
+                            <button class="done-filter-btn" id="doneTypeBtn">Done</button>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Airport Filter (Single select) -->
                 <select id="filterAirport" class="filter-select">
                     <option value="">All Airports</option>
@@ -253,7 +277,7 @@
                 <!-- Form Actions -->
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" id="alreadySubmittedBtn">
-                        Already submitted / Not sure yet
+                        Skip for now
                     </button>
                     <button type="submit" class="btn-primary">Submit</button>
                 </div>

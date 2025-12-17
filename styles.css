@@ -1054,3 +1054,94 @@ select:focus {
         padding: 6px 12px;
     }
 }
+
+/* ===== SHUTTLE CARDS (displayed inline with ride cards) ===== */
+.ride-card.shuttle-card {
+    background: linear-gradient(135deg, #FFE5E5 0%, #FFD0D0 100%);
+    border: 2px solid #FF8A80;
+    position: relative;
+}
+
+.ride-card.shuttle-card::before {
+    content: "🚌 SHUTTLE";
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: var(--cardinal);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1;
+}
+
+.ride-card.shuttle-card:hover {
+    border-color: var(--cardinal);
+    box-shadow: 0 6px 20px rgba(140, 21, 21, 0.25);
+}
+
+/* Low tickets badge for shuttles */
+.ride-card.shuttle-card.low-tickets::after {
+    content: "Low Tickets!";
+    position: absolute;
+    top: 44px;
+    right: 16px;
+    background: #FF9800;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1;
+}
+
+/* Sold out styling */
+.ride-card.shuttle-card.sold-out {
+    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+    border-color: #999;
+    opacity: 0.7;
+}
+
+.ride-card.shuttle-card.sold-out::before {
+    background: #666;
+}
+
+/* Make button fully opaque on sold-out cards */
+.ride-card.shuttle-card.sold-out .shuttle-buy-btn {
+    opacity: 1;
+}
+
+/* Shuttle buy button */
+.shuttle-buy-btn {
+    flex: 1;
+    padding: 12px;
+    background: var(--cardinal);
+    color: white;
+    text-decoration: none;
+    text-align: center;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.shuttle-buy-btn:hover {
+    background: var(--cardinal-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px var(--shadow);
+}
+
+/* Keep waitlist button red so it's still clickable-looking on grayed cards */
+.shuttle-buy-btn.waitlist {
+    background: var(--cardinal);
+}
+
+.shuttle-buy-btn.waitlist:hover {
+    background: var(--cardinal-dark);
+}
