@@ -190,7 +190,7 @@ rideForm.addEventListener('submit', async (e) => {
         });
         
         // Success!
-        alert('✅ Thank you! Your ride info has been submitted successfully!');
+        alert('✅ Thank you! Your ride info has been submitted successfully.');
         
         // Reset form and close modal
         rideForm.reset();
@@ -268,13 +268,20 @@ function displayRides(rides) {
         
         // Format time to 12-hour format with AM/PM
         let formattedTime = 'Time TBD';
-        if (time && time.includes(':')) {
-            const timeParts = time.split(':');
-            let hours = parseInt(timeParts[0]);
-            const minutes = timeParts[1];
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12 || 12; // Convert to 12-hour format
-            formattedTime = `${hours}:${minutes} ${ampm}`;
+        if (time) {
+            const timeStr = String(time).trim();
+            
+            if (timeStr.includes(':')) {
+                const [hourStr, minuteStr] = timeStr.split(':');
+                const hours24 = parseInt(hourStr, 10);
+                const minutes = minuteStr.substring(0, 2); // Take first 2 digits
+                
+                if (!isNaN(hours24) && hours24 >= 0 && hours24 <= 23) {
+                    const ampm = hours24 >= 12 ? 'PM' : 'AM';
+                    const hours12 = hours24 % 12 || 12;
+                    formattedTime = `${hours12}:${minutes} ${ampm}`;
+                }
+            }
         }
         
         // Extract airport code (first 3 letters before the dash)
