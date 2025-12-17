@@ -298,7 +298,7 @@ function displayRides(rides) {
                 
                 <div class="card-info">
                     <div class="card-airport-airline">${airportAirlineText}</div>
-                    ${ride['Location'] ? `<div class="card-location">📍 ${ride['Location']}</div>` : ''}
+                    ${ride['Location'] ? `<div class="card-location">📍 ${ride['Location']}${ride['Location'] === 'Other / Off-Campus' && ride['Location Other'] ? ` (${ride['Location Other']})` : ''}</div>` : ''}
                 </div>
                 
                 <div class="card-actions">
@@ -345,6 +345,22 @@ phoneInput.addEventListener('input', (e) => {
     }
     
     e.target.value = value;
+});
+
+// ===== LOCATION "OTHER" FIELD LOGIC =====
+const locationSelect = document.getElementById('location');
+const locationOtherRow = document.getElementById('locationOtherRow');
+const locationOtherInput = document.getElementById('locationOther');
+
+locationSelect.addEventListener('change', (e) => {
+    if (e.target.value === 'Other / Off-Campus') {
+        locationOtherRow.style.display = 'block';
+        locationOtherInput.setAttribute('required', '');
+    } else {
+        locationOtherRow.style.display = 'none';
+        locationOtherInput.removeAttribute('required');
+        locationOtherInput.value = '';
+    }
 });
 
 // ===== DATE VALIDATION =====
