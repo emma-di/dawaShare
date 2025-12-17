@@ -173,30 +173,38 @@ document.getElementById('clearDateBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     filters.dates = [];
     updateFilterButtonText('dateFilterBtn', [], 'All Dates');
-    populateFilterDropdowns(allRidesData);
     displayRides(allRidesData);
+    // Re-populate date checkboxes without affecting other filters
+    populateDateFilter(allRidesData);
 });
 
 document.getElementById('clearTimeBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     filters.times = [];
     updateFilterButtonText('timeFilterBtn', [], 'All Times');
-    populateFilterDropdowns(allRidesData);
     displayRides(allRidesData);
+    // Re-populate time checkboxes without affecting other filters
+    populateTimeFilter(allRidesData);
 });
 
 document.getElementById('clearLocationBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     filters.locations = [];
     updateFilterButtonText('locationFilterBtn', [], 'All Locations');
-    populateFilterDropdowns(allRidesData);
     displayRides(allRidesData);
+    // Re-populate location checkboxes without affecting other filters
+    populateLocationFilter(allRidesData);
 });
 
 // Airport filter (single select)
 filterAirport.addEventListener('change', (e) => {
     filters.airport = e.target.value;
     displayRides(allRidesData);
+});
+
+// Master Clear All Filters button
+document.getElementById('clearAllFiltersBtn').addEventListener('click', () => {
+    resetFilters();
 });
 
 function updateFilterButtonText(buttonId, filterArray, allText) {
@@ -222,9 +230,17 @@ function resetFilters() {
     updateFilterButtonText('timeFilterBtn', [], 'All Times');
     updateFilterButtonText('locationFilterBtn', [], 'All Locations');
     populateFilterDropdowns(allRidesData);
+    displayRides(allRidesData);
 }
 
 function populateFilterDropdowns(rides) {
+    populateDateFilter(rides);
+    populateAirportFilter(rides);
+    populateTimeFilter(rides);
+    populateLocationFilter(rides);
+}
+
+function populateDateFilter(rides) {
     // Filter rides based on current tab first
     const tabFilteredRides = rides.filter(ride => {
         if (currentTab === 'departures') {
@@ -234,33 +250,10 @@ function populateFilterDropdowns(rides) {
         }
     });
     
-    // Get unique values for each filter
     const dates = new Set();
-    const airports = new Set();
-    const timeRanges = new Set();
-    const locations = new Set();
-    
     tabFilteredRides.forEach(ride => {
         const date = currentTab === 'departures' ? ride['Dep Date'] : ride['Arr Date'];
-        const airport = currentTab === 'departures' ? ride['Dep Airport'] : ride['Arr Airport'];
-        const time = currentTab === 'departures' ? ride['Dep Time'] : ride['Arr Time'];
-        const location = ride['Location'];
-        
         if (date) dates.add(date);
-        if (airport) airports.add(airport.split(' ')[0]); // Get airport code
-        if (time) {
-            // Categorize times into ranges
-            const timeStr = String(time).trim();
-            if (timeStr.includes('T')) {
-                const hours = parseInt(timeStr.split('T')[1].split(':')[0]);
-                if (hours >= 3 && hours < 9) timeRanges.add('Early Morning (3-9am)');
-                else if (hours >= 9 && hours < 12) timeRanges.add('Morning (9am-12pm)');
-                else if (hours >= 12 && hours < 17) timeRanges.add('Afternoon (12-5pm)');
-                else if (hours >= 17 && hours < 21) timeRanges.add('Evening (5-9pm)');
-                else timeRanges.add('Night (9pm-3am)');
-            }
-        }
-        if (location) locations.add(location);
     });
     
     // Populate date checkboxes
@@ -290,6 +283,26 @@ function populateFilterDropdowns(rides) {
         option.appendChild(label);
         dateOptions.appendChild(option);
     });
+}
+
+function populateAirportFilter(rides) {
+    // Filter rides based on current tab first
+    const tabFilteredRides = rides.filter(ride => {
+        if (currentTab === 'departures') {
+            return ride['Dep Date'] && ride['Dep Airport'];
+        } else {
+            return ride['Arr Date'] && ride['Arr Airport'];
+        }
+    });
+    
+    const airports = new Set();
+    tabFilteredRides.forEach(ride => {
+        const airport = currentTab === 'departures' ? ride['Dep Airport'] : ride['Arr Airport'];
+        if (airport) airports.add(airport.split(' ')[0]); // Get airport code
+    });
+    
+    // Store current selection
+    const currentAirport = filterAirport.value;
     
     // Populate airport dropdown (single select)
     filterAirport.innerHTML = '<option value="">All Airports</option>';
@@ -298,6 +311,39 @@ function populateFilterDropdowns(rides) {
         option.value = airport;
         option.textContent = airport;
         filterAirport.appendChild(option);
+    });
+    
+    // Restore selection if it still exists
+    if (currentAirport && Array.from(airports).includes(currentAirport)) {
+        filterAirport.value = currentAirport;
+    }
+}
+
+function populateTimeFilter(rides) {
+    // Filter rides based on current tab first
+    const tabFilteredRides = rides.filter(ride => {
+        if (currentTab === 'departures') {
+            return ride['Dep Date'] && ride['Dep Airport'];
+        } else {
+            return ride['Arr Date'] && ride['Arr Airport'];
+        }
+    });
+    
+    const timeRanges = new Set();
+    tabFilteredRides.forEach(ride => {
+        const time = currentTab === 'departures' ? ride['Dep Time'] : ride['Arr Time'];
+        if (time) {
+            // Categorize times into ranges
+            const timeStr = String(time).trim();
+            if (timeStr.includes('T')) {
+                const hours = parseInt(timeStr.split('T')[1].split(':')[0]);
+                if (hours >= 3 && hours < 9) timeRanges.add('Early Morning (3-9am)');
+                else if (hours >= 9 && hours < 12) timeRanges.add('Morning (9am-12pm)');
+                else if (hours >= 12 && hours < 17) timeRanges.add('Afternoon (12-5pm)');
+                else if (hours >= 17 && hours < 21) timeRanges.add('Evening (5-9pm)');
+                else timeRanges.add('Night (9pm-3am)');
+            }
+        }
     });
     
     // Populate time checkboxes
@@ -336,6 +382,23 @@ function populateFilterDropdowns(rides) {
         option.appendChild(checkbox);
         option.appendChild(label);
         timeOptions.appendChild(option);
+    });
+}
+
+function populateLocationFilter(rides) {
+    // Filter rides based on current tab first
+    const tabFilteredRides = rides.filter(ride => {
+        if (currentTab === 'departures') {
+            return ride['Dep Date'] && ride['Dep Airport'];
+        } else {
+            return ride['Arr Date'] && ride['Arr Airport'];
+        }
+    });
+    
+    const locations = new Set();
+    tabFilteredRides.forEach(ride => {
+        const location = ride['Location'];
+        if (location) locations.add(location);
     });
     
     // Populate location checkboxes
@@ -721,7 +784,7 @@ function displayRides(rides) {
                         <a href="mailto:${ride['Email']}" class="contact-btn">✉️ Email</a>
                         <a href="sms:${ride['Phone']}" class="contact-btn phone-btn">💬 Text</a>
                     ` : `
-                        <a href="mailto:${ride['Email']}" class="contact-btn contact-btn-full">✉️ Contact</a>
+                        <a href="mailto:${ride['Email']}" class="contact-btn contact-btn-full">✉️ Email</a>
                     `}
                 </div>
             </div>
