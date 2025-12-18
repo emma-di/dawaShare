@@ -12,7 +12,6 @@ dawaShare helps Stanford students find carpool partners and view official shuttl
 - **Smart Filtering**: Filter rides by date, time, airport, campus location, and type (shuttles vs. individuals)
 - **Integrated Shuttles**: Official Stanford shuttle schedules appear alongside individual rides, chronologically sorted
 - **Direct Contact**: Email and text buttons for easy communication
-- **Real-time Updates**: Automatically refreshes every 30 seconds to show new rides
 - **Mobile Friendly**: Responsive design works on all devices
 
 ## How It Works
