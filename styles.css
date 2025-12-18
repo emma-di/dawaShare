@@ -87,13 +87,15 @@ header {
 }
 
 .logo-icon {
-    font-size: 36px;
+    font-size: 48px;
+    line-height: 1;
 }
 
 h1 {
     font-family: 'Space Mono', monospace;
-    font-size: 32px;
+    font-size: 36px;
     font-weight: 700;
+    letter-spacing: -0.5px;
     color: var(--cardinal);
 }
 
@@ -1032,13 +1034,19 @@ select:focus {
     }
     
     /* Modal fixes for mobile */
+    .modal {
+        align-items: flex-start; /* Align to top instead of center */
+        padding-top: 20px; /* Add top padding */
+    }
+    
     .modal-body {
         padding: 20px 20px 40px 20px; /* Reduce side padding on mobile */
     }
     
     .modal-content {
         width: 95%; /* Take up more screen width */
-        max-height: 95vh;
+        max-height: 90vh; /* Slightly smaller to ensure top visibility */
+        margin-top: 0; /* Remove any top margin */
     }
     
     /* Footer on mobile */
