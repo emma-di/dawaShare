@@ -44,7 +44,7 @@ const DEPARTURE_SHUTTLES = [
 - `AIRLINES`: Airline options
 
 ### 4. Deploy
-Host on any static site platform (GitHub Pages, Netlify, Vercel, etc.)
+Host on any static site platform (GitHub Pages, Netlify, Vercel, etc.); currently on Netlify.
 
 ## File Structure
 ```
@@ -68,7 +68,6 @@ Host on any static site platform (GitHub Pages, Netlify, Vercel, etc.)
 - Email notifications for new matching rides
 - Calendar export for travel dates
 - Ride capacity tracking
-- Feedback/rating system
 
 ## Credits
 
