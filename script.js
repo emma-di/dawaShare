@@ -437,13 +437,27 @@ function populateTimeFilter(rides) {
     });
     
     const timeRanges = new Set();
+    
+    // Add time ranges from individual rides
     tabFilteredRides.forEach(ride => {
         const time = currentTab === 'departures' ? ride['Dep Time'] : ride['Arr Time'];
         if (time) {
-            // Categorize times into ranges
+            // Categorize times into ranges using LOCAL time
             const timeStr = String(time).trim();
-            if (timeStr.includes('T')) {
-                const hours = parseInt(timeStr.split('T')[1].split(':')[0]);
+            let hours;
+            
+            if (timeStr.includes('T') && timeStr.includes('Z')) {
+                // UTC time - convert to local
+                const fullDate = new Date(timeStr);
+                hours = fullDate.getHours(); // Gets local hours
+            } else if (timeStr.includes('T')) {
+                // ISO format but not UTC
+                hours = parseInt(timeStr.split('T')[1].split(':')[0]);
+            } else if (timeStr.includes(':')) {
+                hours = parseInt(timeStr.split(':')[0]);
+            }
+            
+            if (hours !== undefined) {
                 if (hours >= 3 && hours < 9) timeRanges.add('Early Morning (3-9am)');
                 else if (hours >= 9 && hours < 12) timeRanges.add('Morning (9am-12pm)');
                 else if (hours >= 12 && hours < 17) timeRanges.add('Afternoon (12-5pm)');
@@ -453,7 +467,18 @@ function populateTimeFilter(rides) {
         }
     });
     
-    // Populate time checkboxes
+    // Add time ranges from shuttles
+    const shuttles = currentTab === 'departures' ? DEPARTURE_SHUTTLES : ARRIVAL_SHUTTLES;
+    shuttles.forEach(shuttle => {
+        const hours = parseInt(shuttle.time.split(':')[0]);
+        if (hours >= 3 && hours < 9) timeRanges.add('Early Morning (3-9am)');
+        else if (hours >= 9 && hours < 12) timeRanges.add('Morning (9am-12pm)');
+        else if (hours >= 12 && hours < 17) timeRanges.add('Afternoon (12-5pm)');
+        else if (hours >= 17 && hours < 21) timeRanges.add('Evening (5-9pm)');
+        else timeRanges.add('Night (9pm-3am)');
+    });
+    
+    // Populate time checkboxes - show all time ranges, always enabled
     const timeOptions = document.getElementById('timeFilterOptions');
     timeOptions.innerHTML = '';
     const timeOrder = ['Early Morning (3-9am)', 'Morning (9am-12pm)', 'Afternoon (12-5pm)', 'Evening (5-9pm)', 'Night (9pm-3am)'];
@@ -461,15 +486,12 @@ function populateTimeFilter(rides) {
         const option = document.createElement('div');
         option.className = 'filter-option';
         
-        // Check if this time range has any rides
-        const hasRides = timeRanges.has(timeRange);
-        
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.id = `time-${timeRange}`;
         checkbox.value = timeRange;
         checkbox.checked = filters.times.includes(timeRange);
-        checkbox.disabled = !hasRides; // Disable if no rides
+        // Always enabled - let users select any time
         checkbox.addEventListener('change', (e) => {
             if (e.target.checked) {
                 filters.times.push(timeRange);
@@ -482,10 +504,6 @@ function populateTimeFilter(rides) {
         const label = document.createElement('label');
         label.htmlFor = `time-${timeRange}`;
         label.textContent = timeRange;
-        if (!hasRides) {
-            label.style.color = '#999';
-            label.style.fontStyle = 'italic';
-        }
         option.appendChild(checkbox);
         option.appendChild(label);
         timeOptions.appendChild(option);
@@ -511,27 +529,19 @@ function populateLocationFilter(rides) {
     
     console.log('Locations from data:', Array.from(availableLocationsFromData));
     
-    // Populate location checkboxes - show ALL locations from config
+    // Populate location checkboxes - show ALL locations from config, always enabled
     const locationOptions = document.getElementById('locationFilterOptions');
     locationOptions.innerHTML = '';
     LOCATIONS.forEach(configLocation => {
         const option = document.createElement('div');
         option.className = 'filter-option';
         
-        // Check if this location has any rides
-        // Try exact match first, then check if any data location contains this config location
-        const hasRides = availableLocationsFromData.has(configLocation) || 
-                        Array.from(availableLocationsFromData).some(dataLoc => 
-                            dataLoc.toLowerCase().includes(configLocation.toLowerCase()) ||
-                            configLocation.toLowerCase().includes(dataLoc.toLowerCase())
-                        );
-        
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.id = `location-${configLocation}`;
         checkbox.value = configLocation;
         checkbox.checked = filters.locations.includes(configLocation);
-        checkbox.disabled = !hasRides; // Disable if no rides
+        // Always enabled - let users select any location
         checkbox.addEventListener('change', (e) => {
             if (e.target.checked) {
                 filters.locations.push(configLocation);
@@ -544,10 +554,6 @@ function populateLocationFilter(rides) {
         const label = document.createElement('label');
         label.htmlFor = `location-${configLocation}`;
         label.textContent = configLocation;
-        if (!hasRides) {
-            label.style.color = '#999';
-            label.style.fontStyle = 'italic';
-        }
         option.appendChild(checkbox);
         option.appendChild(label);
         locationOptions.appendChild(option);
@@ -681,7 +687,8 @@ rideForm.addEventListener('submit', async (e) => {
     
     try {
         // Send data to Google Sheets
-        const response = await fetch(GOOGLE_SHEET_URL, {
+        // Note: mode: 'no-cors' means we can't read the response, so we'll assume success
+        const fetchPromise = fetch(GOOGLE_SHEET_URL, {
             method: 'POST',
             mode: 'no-cors',
             headers: {
@@ -690,7 +697,13 @@ rideForm.addEventListener('submit', async (e) => {
             body: JSON.stringify(data)
         });
         
-        // Success!
+        // Don't wait forever - give it 2 seconds max, then assume success
+        const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Wait for whichever comes first: response or timeout
+        await Promise.race([fetchPromise, timeoutPromise]);
+        
+        // Success! (we assume, since no-cors doesn't let us check)
         alert('✅ Thank you! Your ride info has been submitted successfully.');
         
         // Save user's info to localStorage for pre-filling emails
@@ -823,18 +836,29 @@ function displayRides(rides) {
             if (!time) return false;
             
             const timeStr = String(time).trim();
-            if (timeStr.includes('T')) {
-                const hours = parseInt(timeStr.split('T')[1].split(':')[0]);
-                return filters.times.some(timeRange => {
-                    if (timeRange === 'Early Morning (3-9am)') return hours >= 3 && hours < 9;
-                    if (timeRange === 'Morning (9am-12pm)') return hours >= 9 && hours < 12;
-                    if (timeRange === 'Afternoon (12-5pm)') return hours >= 12 && hours < 17;
-                    if (timeRange === 'Evening (5-9pm)') return hours >= 17 && hours < 21;
-                    if (timeRange === 'Night (9pm-3am)') return hours >= 21 || hours < 3;
-                    return false;
-                });
+            let hours;
+            
+            if (timeStr.includes('T') && timeStr.includes('Z')) {
+                // UTC time - convert to local
+                const fullDate = new Date(timeStr);
+                hours = fullDate.getHours(); // Gets local hours
+            } else if (timeStr.includes('T')) {
+                // ISO format but not UTC
+                hours = parseInt(timeStr.split('T')[1].split(':')[0]);
+            } else if (timeStr.includes(':')) {
+                hours = parseInt(timeStr.split(':')[0]);
             }
-            return false;
+            
+            if (hours === undefined) return false;
+            
+            return filters.times.some(timeRange => {
+                if (timeRange === 'Early Morning (3-9am)') return hours >= 3 && hours < 9;
+                if (timeRange === 'Morning (9am-12pm)') return hours >= 9 && hours < 12;
+                if (timeRange === 'Afternoon (12-5pm)') return hours >= 12 && hours < 17;
+                if (timeRange === 'Evening (5-9pm)') return hours >= 17 && hours < 21;
+                if (timeRange === 'Night (9pm-3am)') return hours >= 21 || hours < 3;
+                return false;
+            });
         });
     }
     
@@ -884,14 +908,13 @@ function displayRides(rides) {
     
     let html = '<div class="rides-grid">';
     
-    // ===== ADD SHUTTLE CARDS FIRST (PINNED TO TOP) =====
+    // ===== PREPARE SHUTTLES =====
     let shuttles = currentTab === 'departures' ? DEPARTURE_SHUTTLES : ARRIVAL_SHUTTLES;
     
     // Apply filters to shuttles (NOTE: Shuttles are NOT filtered by location - they serve all locations)
     // Type filter
     if (filters.types.length > 0) {
         if (!filters.types.includes('shuttle')) {
-            // If shuttles not selected in type filter, don't show any shuttles
             shuttles = [];
         }
     }
@@ -921,8 +944,6 @@ function displayRides(rides) {
         });
     }
     
-    // NO LOCATION FILTER FOR SHUTTLES - they serve all campus locations
-    
     // Filter individual rides by type filter
     if (filters.types.length > 0 && filters.types.includes('individual') && !filters.types.includes('shuttle')) {
         // Show only individuals, shuttles already filtered out above
@@ -937,7 +958,58 @@ function displayRides(rides) {
         return;
     }
     
+    // ===== COMBINE SHUTTLES AND RIDES INTO ONE ARRAY FOR CHRONOLOGICAL SORTING =====
+    const allItems = [];
+    
+    // Add shuttles with type marker and sortable datetime
     shuttles.forEach(shuttle => {
+        allItems.push({
+            type: 'shuttle',
+            data: shuttle,
+            sortDateTime: `${shuttle.date}T${shuttle.time}:00` // e.g., "2025-12-19T08:30:00"
+        });
+    });
+    
+    // Add individual rides with type marker and sortable datetime
+    filteredRides.forEach(ride => {
+        const date = currentTab === 'departures' ? ride['Dep Date'] : ride['Arr Date'];
+        const time = currentTab === 'departures' ? ride['Dep Time'] : ride['Arr Time'];
+        
+        // Extract date and time for sorting
+        let sortDate = date ? date.split('T')[0] : '9999-12-31'; // Far future if no date
+        let sortTime = '00:00:00';
+        
+        if (time) {
+            const timeStr = String(time).trim();
+            if (timeStr.includes('T') && timeStr.includes('Z')) {
+                // UTC time - convert to local for sorting
+                const fullDate = new Date(timeStr);
+                const hours = String(fullDate.getHours()).padStart(2, '0');
+                const mins = String(fullDate.getMinutes()).padStart(2, '0');
+                sortTime = `${hours}:${mins}:00`;
+            } else if (timeStr.includes('T')) {
+                sortTime = timeStr.split('T')[1].split('.')[0];
+            } else if (timeStr.includes(':')) {
+                const parts = timeStr.split(':');
+                sortTime = `${parts[0].padStart(2, '0')}:${parts[1] || '00'}:00`;
+            }
+        }
+        
+        allItems.push({
+            type: 'ride',
+            data: ride,
+            sortDateTime: `${sortDate}T${sortTime}`
+        });
+    });
+    
+    // Sort all items chronologically
+    allItems.sort((a, b) => a.sortDateTime.localeCompare(b.sortDateTime));
+    
+    // ===== RENDER ALL ITEMS IN CHRONOLOGICAL ORDER =====
+    allItems.forEach(item => {
+        if (item.type === 'shuttle') {
+            // Render shuttle card
+            const shuttle = item.data;
         // Parse date manually to avoid timezone issues
         const [year, month, day] = shuttle.date.split('-').map(Number);
         const shuttleDate = new Date(year, month - 1, day); // Create in local timezone
@@ -986,10 +1058,9 @@ function displayRides(rides) {
                 </div>
             </div>
         `;
-    });
-    
-    // ===== NOW ADD REGULAR RIDE CARDS =====
-    filteredRides.forEach(ride => {
+        } else {
+            // Render individual ride card
+            const ride = item.data;
         console.log('--- Processing ride ---');
         console.log('Name:', ride['First Name'], ride['Last Name']);
         console.log('Dep Time:', ride['Dep Time']);
@@ -1208,7 +1279,8 @@ function displayRides(rides) {
                 </div>
             </div>
         `;
-    });
+        } // End if shuttle vs ride
+    }); // End allItems.forEach
     
     html += '</div>';
     ridesTable.innerHTML = html;
@@ -1220,15 +1292,25 @@ function formatDate(dateString) {
     
     // Parse YYYY-MM-DD format manually to avoid any timezone issues
     const dateOnly = dateString.split('T')[0]; // Remove time if present: "2025-12-17"
-    const [year, month, day] = dateOnly.split('-');
+    let [year, month, day] = dateOnly.split('-').map(Number);
     
-    // Format manually without Date objects
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const monthName = monthNames[parseInt(month, 10) - 1];
-    const dayNum = parseInt(day, 10);
+    // Auto-correct year if it's too far in the future (likely typo)
+    // If year is more than 1 year from now, assume they meant current academic year
+    const currentYear = new Date().getFullYear();
+    if (year > currentYear + 1) {
+        console.log(`Auto-correcting year from ${year} to ${year - 1}`);
+        year = year - 1;
+    }
     
-    return `${monthName} ${dayNum}, ${year}`;
+    // Create date in local timezone to get weekday
+    const date = new Date(year, month - 1, day);
+    
+    // Format as "Day, M/D" to match shuttle format (e.g., "Sun, 12/21")
+    return date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'numeric', 
+        day: 'numeric' 
+    });
 }
 
 // ===== EMAIL FIELD FORMATTING =====
@@ -1275,10 +1357,17 @@ locationSelect.addEventListener('change', (e) => {
 });
 
 // ===== DATE VALIDATION =====
-// Set minimum date to today
-const today = new Date().toISOString().split('T')[0];
-document.getElementById('depDate').setAttribute('min', today);
-document.getElementById('arrDate').setAttribute('min', today);
+// Set minimum date to today and maximum to 6 months in future
+const today = new Date();
+const todayStr = today.toISOString().split('T')[0];
+const sixMonthsLater = new Date(today);
+sixMonthsLater.setMonth(today.getMonth() + 6);
+const maxDateStr = sixMonthsLater.toISOString().split('T')[0];
+
+document.getElementById('depDate').setAttribute('min', todayStr);
+document.getElementById('depDate').setAttribute('max', maxDateStr);
+document.getElementById('arrDate').setAttribute('min', todayStr);
+document.getElementById('arrDate').setAttribute('max', maxDateStr);
 
 // Load rides and show modal when page loads
 window.addEventListener('DOMContentLoaded', () => {

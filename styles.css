@@ -1102,7 +1102,7 @@ select:focus {
     line-height: 1;
 }
 
-/* Sold out styling - use grayed colors instead of opacity so button stays bright */
+/* Sold out styling */
 .ride-card.shuttle-card.sold-out {
     background: linear-gradient(135deg, #e8e8e8 0%, #d0d0d0 100%);
     border-color: #999;
@@ -1144,11 +1144,13 @@ select:focus {
     box-shadow: 0 4px 8px var(--shadow);
 }
 
-/* Keep waitlist button red so it's still clickable-looking on grayed cards */
+/* Waitlist button - muted red matching the sold-out tile */
 .shuttle-buy-btn.waitlist {
-    background: var(--cardinal);
+    background: #a85252; /* Muted cardinal red */
+    opacity: 0.8;
 }
 
 .shuttle-buy-btn.waitlist:hover {
-    background: var(--cardinal-dark);
+    background: #8C1515; /* Darker on hover */
+    opacity: 0.9;
 }
