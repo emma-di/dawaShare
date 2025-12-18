@@ -344,19 +344,24 @@ function populateDateFilter(rides) {
         if (date) {
             // Normalize date to YYYY-MM-DD format (remove time portion if present)
             const normalizedDate = date.split('T')[0];
+            console.log('Adding date to filter options:', date, '→', normalizedDate);
             dates.add(normalizedDate);
         }
     });
     
     // Add shuttle dates to the set (Set automatically prevents duplicates)
     const shuttles = currentTab === 'departures' ? DEPARTURE_SHUTTLES : ARRIVAL_SHUTTLES;
+    console.log('Adding shuttle dates for', currentTab, '- shuttle count:', shuttles.length);
     shuttles.forEach(shuttle => {
         // Shuttle dates are already in YYYY-MM-DD format
+        console.log('Adding shuttle date:', shuttle.date);
         dates.add(shuttle.date);
     });
     
-    // Convert to array and sort chronologically (not alphabetically)
-    const sortedDates = Array.from(dates).sort((a, b) => new Date(a) - new Date(b));
+    // Convert to array and sort chronologically
+    // Use string comparison since YYYY-MM-DD format sorts correctly alphabetically
+    // This avoids timezone conversion issues from new Date()
+    const sortedDates = Array.from(dates).sort();
     
     // Populate date checkboxes
     const dateOptions = document.getElementById('dateFilterOptions');
@@ -497,35 +502,52 @@ function populateLocationFilter(rides) {
         }
     });
     
-    const locations = new Set();
+    // Get locations that actually have rides (with the exact values from spreadsheet)
+    const availableLocationsFromData = new Set();
     tabFilteredRides.forEach(ride => {
         const location = ride['Location'];
-        if (location) locations.add(location);
+        if (location) availableLocationsFromData.add(location);
     });
     
-    // Populate location checkboxes
+    console.log('Locations from data:', Array.from(availableLocationsFromData));
+    
+    // Populate location checkboxes - show ALL locations from config
     const locationOptions = document.getElementById('locationFilterOptions');
     locationOptions.innerHTML = '';
-    Array.from(locations).sort().forEach(location => {
+    LOCATIONS.forEach(configLocation => {
         const option = document.createElement('div');
         option.className = 'filter-option';
+        
+        // Check if this location has any rides
+        // Try exact match first, then check if any data location contains this config location
+        const hasRides = availableLocationsFromData.has(configLocation) || 
+                        Array.from(availableLocationsFromData).some(dataLoc => 
+                            dataLoc.toLowerCase().includes(configLocation.toLowerCase()) ||
+                            configLocation.toLowerCase().includes(dataLoc.toLowerCase())
+                        );
+        
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.id = `location-${location}`;
-        checkbox.value = location;
-        checkbox.checked = filters.locations.includes(location);
+        checkbox.id = `location-${configLocation}`;
+        checkbox.value = configLocation;
+        checkbox.checked = filters.locations.includes(configLocation);
+        checkbox.disabled = !hasRides; // Disable if no rides
         checkbox.addEventListener('change', (e) => {
             if (e.target.checked) {
-                filters.locations.push(location);
+                filters.locations.push(configLocation);
             } else {
-                filters.locations = filters.locations.filter(l => l !== location);
+                filters.locations = filters.locations.filter(l => l !== configLocation);
             }
             updateFilterButtonText('locationFilterBtn', filters.locations, 'All Locations');
             displayRides(allRidesData);
         });
         const label = document.createElement('label');
-        label.htmlFor = `location-${location}`;
-        label.textContent = location;
+        label.htmlFor = `location-${configLocation}`;
+        label.textContent = configLocation;
+        if (!hasRides) {
+            label.style.color = '#999';
+            label.style.fontStyle = 'italic';
+        }
         option.appendChild(checkbox);
         option.appendChild(label);
         locationOptions.appendChild(option);
@@ -762,11 +784,29 @@ function displayRides(rides) {
     
     // Apply additional filters
     if (filters.dates.length > 0) {
+        console.log('DATE FILTER ACTIVE - Selected dates:', filters.dates);
         filteredRides = filteredRides.filter(ride => {
             const date = currentTab === 'departures' ? ride['Dep Date'] : ride['Arr Date'];
-            // Normalize date to YYYY-MM-DD format before comparing
-            const normalizedDate = date ? date.split('T')[0] : '';
-            return filters.dates.includes(normalizedDate);
+            if (!date) return false;
+            
+            // Normalize date to YYYY-MM-DD format
+            // Handle both ISO strings and plain date strings
+            let normalizedDate;
+            if (date.includes('T')) {
+                // ISO format with time - split and take date part
+                normalizedDate = date.split('T')[0];
+            } else if (date.includes('-')) {
+                // Already in YYYY-MM-DD format
+                normalizedDate = date;
+            } else {
+                // Fallback: try to parse as date
+                const parsed = new Date(date);
+                normalizedDate = parsed.toISOString().split('T')[0];
+            }
+            
+            const matches = filters.dates.includes(normalizedDate);
+            console.log('Date check:', normalizedDate, 'matches filter?', matches);
+            return matches;
         });
     }
     
@@ -800,7 +840,17 @@ function displayRides(rides) {
     
     if (filters.locations.length > 0) {
         filteredRides = filteredRides.filter(ride => {
-            return filters.locations.includes(ride['Location']);
+            const rideLocation = ride['Location'];
+            if (!rideLocation) return false;
+            
+            // Check if any selected location matches (exact or partial match)
+            return filters.locations.some(selectedLoc => {
+                // Exact match
+                if (rideLocation === selectedLoc) return true;
+                // Partial match (case-insensitive) - handles "Toyon" vs "Toyon Hall"
+                return rideLocation.toLowerCase().includes(selectedLoc.toLowerCase()) ||
+                       selectedLoc.toLowerCase().includes(rideLocation.toLowerCase());
+            });
         });
     }
     
@@ -837,7 +887,7 @@ function displayRides(rides) {
     // ===== ADD SHUTTLE CARDS FIRST (PINNED TO TOP) =====
     let shuttles = currentTab === 'departures' ? DEPARTURE_SHUTTLES : ARRIVAL_SHUTTLES;
     
-    // Apply filters to shuttles
+    // Apply filters to shuttles (NOTE: Shuttles are NOT filtered by location - they serve all locations)
     // Type filter
     if (filters.types.length > 0) {
         if (!filters.types.includes('shuttle')) {
@@ -871,6 +921,8 @@ function displayRides(rides) {
         });
     }
     
+    // NO LOCATION FILTER FOR SHUTTLES - they serve all campus locations
+    
     // Filter individual rides by type filter
     if (filters.types.length > 0 && filters.types.includes('individual') && !filters.types.includes('shuttle')) {
         // Show only individuals, shuttles already filtered out above
@@ -886,7 +938,10 @@ function displayRides(rides) {
     }
     
     shuttles.forEach(shuttle => {
-        const shuttleDate = new Date(shuttle.date);
+        // Parse date manually to avoid timezone issues
+        const [year, month, day] = shuttle.date.split('-').map(Number);
+        const shuttleDate = new Date(year, month - 1, day); // Create in local timezone
+        
         const formattedDate = shuttleDate.toLocaleDateString('en-US', { 
             weekday: 'short', 
             month: 'numeric', 
@@ -967,9 +1022,15 @@ function displayRides(rides) {
             if (timeStr && timeStr !== '' && timeStr !== 'undefined' && timeStr !== 'null') {
                 let hours24, minutes;
                 
-                // Check if it's an ISO datetime format (e.g., "1899-12-30T23:00:00.000Z")
-                if (timeStr.includes('T') && timeStr.includes(':')) {
-                    // Extract time portion after 'T'
+                // Check if it's an ISO datetime format (e.g., "1899-12-30T16:00:00.000Z")
+                if (timeStr.includes('T') && timeStr.includes(':') && timeStr.includes('Z')) {
+                    // This is a UTC time from Google Sheets - need to convert to local time
+                    const fullDate = new Date(timeStr);
+                    hours24 = fullDate.getHours(); // This gets local hours
+                    minutes = String(fullDate.getMinutes()).padStart(2, '0');
+                    console.log('Parsed from ISO UTC format - local hours24:', hours24, 'minutes:', minutes);
+                } else if (timeStr.includes('T') && timeStr.includes(':')) {
+                    // ISO format but not UTC marked - extract time portion
                     const timePortion = timeStr.split('T')[1].split('.')[0]; // Gets "23:00:00"
                     const [hourStr, minuteStr] = timePortion.split(':');
                     hours24 = parseInt(hourStr, 10);
@@ -1156,8 +1217,18 @@ function displayRides(rides) {
 // ===== HELPER FUNCTION =====
 function formatDate(dateString) {
     if (!dateString) return 'Date TBD';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    
+    // Parse YYYY-MM-DD format manually to avoid any timezone issues
+    const dateOnly = dateString.split('T')[0]; // Remove time if present: "2025-12-17"
+    const [year, month, day] = dateOnly.split('-');
+    
+    // Format manually without Date objects
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthName = monthNames[parseInt(month, 10) - 1];
+    const dayNum = parseInt(day, 10);
+    
+    return `${monthName} ${dayNum}, ${year}`;
 }
 
 // ===== EMAIL FIELD FORMATTING =====

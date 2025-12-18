@@ -268,20 +268,21 @@ h1 {
     border: 2px solid var(--cardinal);
     border-radius: 8px;
     box-shadow: 0 4px 12px var(--shadow);
-    max-height: 300px;
-    overflow-y: auto;
     z-index: 100;
-    display: none;
+    display: none; /* Hidden by default */
+    max-height: 400px;
+    flex-direction: column; /* Use flex layout when visible */
 }
 
 .filter-dropdown-panel.active {
-    display: block;
+    display: flex; /* Show and use flex layout when active */
 }
 
 .filter-options {
     padding: 8px;
-    max-height: 240px;
+    max-height: 300px; /* Increased scrollable area */
     overflow-y: auto;
+    flex: 1; /* Allow to grow but respect max-height */
 }
 
 .filter-panel-footer {
@@ -291,6 +292,7 @@ h1 {
     flex-direction: column;
     gap: 6px;
     background: var(--light-gray);
+    flex-shrink: 0; /* Prevent footer from shrinking */
 }
 
 .clear-filter-btn {
@@ -1100,20 +1102,25 @@ select:focus {
     line-height: 1;
 }
 
-/* Sold out styling */
+/* Sold out styling - use grayed colors instead of opacity so button stays bright */
 .ride-card.shuttle-card.sold-out {
-    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+    background: linear-gradient(135deg, #e8e8e8 0%, #d0d0d0 100%);
     border-color: #999;
-    opacity: 0.7;
 }
 
 .ride-card.shuttle-card.sold-out::before {
     background: #666;
 }
 
-/* Make button fully opaque on sold-out cards */
-.ride-card.shuttle-card.sold-out .shuttle-buy-btn {
-    opacity: 1;
+.ride-card.shuttle-card.sold-out .date-large,
+.ride-card.shuttle-card.sold-out .time-large {
+    color: #8C1515;
+    opacity: 0.6;
+}
+
+.ride-card.shuttle-card.sold-out .card-airport-airline,
+.ride-card.shuttle-card.sold-out .card-location {
+    opacity: 0.6;
 }
 
 /* Shuttle buy button */

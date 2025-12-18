@@ -3,21 +3,21 @@
 // This file is separate so it won't get overwritten when updating other functionality
 
 const LOCATIONS = [
-  'Branner Hall',
+  'Branner',
   'Casper Quad',
   'Crothers / Crothers Memorial (CroMem)',
   'Cowell Lane',
   'EVGR',
-  'Florence Moore Hall',
+  'Florence Moore',
   'GovCo',
   'Lagunita Court',
   'Mirrielees',
-  'Roble Hall',
+  'Roble',
   'Row: Lower (closer to Tresidder)',
   'Row: Upper (further from Tresidder)',
-  'Stern Hall',
-  'Toyon Hall',
-  'Wilbur Hall',
+  'Stern',
+  'Toyon',
+  'Wilbur',
   'Other / Off-Campus'
 ];
 
