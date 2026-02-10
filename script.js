@@ -91,7 +91,8 @@ let allRidesData = []; // Store all rides data (cached)
 let filters = {
     dates: [],
     airport: '',
-    times: [],
+    timeMin: 0,      // Minutes from midnight (0-1440)
+    timeMax: 1440,   // Minutes from midnight (0-1440, where 1440 = next midnight)
     locations: [],
     types: [] // 'shuttle' or 'individual'
 };
@@ -206,6 +207,7 @@ document.getElementById('doneDateBtn').addEventListener('click', (e) => {
 
 document.getElementById('doneTimeBtn').addEventListener('click', (e) => {
     e.stopPropagation();
+    updateTimeDisplay();
     closeAllDropdowns();
 });
 
@@ -231,11 +233,10 @@ document.getElementById('clearDateBtn').addEventListener('click', (e) => {
 
 document.getElementById('clearTimeBtn').addEventListener('click', (e) => {
     e.stopPropagation();
-    filters.times = [];
-    updateFilterButtonText('timeFilterBtn', [], 'All Times');
+    filters.timeMin = 0;
+    filters.timeMax = 1440;
+    updateTimeSlider(); // This calls updateTimeDisplay() which updates the button text
     displayRides(allRidesData);
-    // Re-populate time checkboxes without affecting other filters
-    populateTimeFilter(allRidesData);
 });
 
 document.getElementById('clearLocationBtn').addEventListener('click', (e) => {
@@ -270,6 +271,103 @@ document.querySelectorAll('#typeFilterOptions input[type="checkbox"]').forEach(c
         updateFilterButtonText('typeFilterBtn', filters.types, 'All Types');
         displayRides(allRidesData);
     });
+});
+
+// ===== TIME SLIDER FUNCTIONALITY =====
+const timeSliderMin = document.getElementById('timeSliderMin');
+const timeSliderMax = document.getElementById('timeSliderMax');
+const timeRangeDisplay = document.getElementById('timeRangeDisplay');
+const timeSliderRange = document.getElementById('timeSliderRange');
+
+// Convert minutes from midnight to time string (e.g., 0 -> "12:00 AM", 750 -> "12:30 PM", 1440 -> "12:00 AM")
+function minutesToTimeString(minutes) {
+    // Handle 1440 (next midnight) as 12:00 AM
+    if (minutes === 1440) {
+        return "12:00 AM";
+    }
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${String(mins).padStart(2, '0')} ${period}`;
+}
+
+// Update the visual slider range
+function updateSliderRange() {
+    const min = parseInt(timeSliderMin.value);
+    const max = parseInt(timeSliderMax.value);
+    const percent = (val) => (val / 1440) * 100;
+    
+    timeSliderRange.style.left = percent(min) + '%';
+    timeSliderRange.style.width = (percent(max) - percent(min)) + '%';
+}
+
+// Update the time display and filter button
+function updateTimeDisplay() {
+    const min = parseInt(timeSliderMin.value);
+    const max = parseInt(timeSliderMax.value);
+    
+    const minTime = minutesToTimeString(min);
+    const maxTime = minutesToTimeString(max);
+    
+    timeRangeDisplay.textContent = `${minTime} - ${maxTime}`;
+    
+    // Update button text
+    if (min === 0 && max === 1440) {
+        document.getElementById('timeFilterBtn').childNodes[0].textContent = 'All Times ';
+    } else {
+        document.getElementById('timeFilterBtn').childNodes[0].textContent = `${minTime} - ${maxTime} `;
+    }
+}
+
+// Update both visual and filters
+function updateTimeSlider() {
+    timeSliderMin.value = filters.timeMin;
+    timeSliderMax.value = filters.timeMax;
+    updateSliderRange();
+    updateTimeDisplay();
+}
+
+// Handle slider changes
+timeSliderMin.addEventListener('input', function() {
+    const min = parseInt(this.value);
+    const max = parseInt(timeSliderMax.value);
+    
+    // Prevent min from exceeding max
+    if (min > max) {
+        this.value = max;
+        filters.timeMin = max;
+    } else {
+        filters.timeMin = min;
+    }
+    
+    updateSliderRange();
+    updateTimeDisplay();
+});
+
+timeSliderMax.addEventListener('input', function() {
+    const min = parseInt(timeSliderMin.value);
+    const max = parseInt(this.value);
+    
+    // Prevent max from going below min
+    if (max < min) {
+        this.value = min;
+        filters.timeMax = min;
+    } else {
+        filters.timeMax = max;
+    }
+    
+    updateSliderRange();
+    updateTimeDisplay();
+});
+
+// Apply filter when user releases the slider (mouseup/touchend)
+timeSliderMin.addEventListener('change', () => {
+    displayRides(allRidesData);
+});
+
+timeSliderMax.addEventListener('change', () => {
+    displayRides(allRidesData);
 });
 
 // Airport filter (single select)
@@ -307,16 +405,17 @@ function updateFilterButtonText(buttonId, filterArray, allText) {
 }
 
 function resetFilters() {
-    filters = { dates: [], airport: '', times: [], locations: [], types: [] };
+    filters = { dates: [], airport: '', timeMin: 0, timeMax: 1440, locations: [], types: [] };
     filterAirport.value = '';
     updateFilterButtonText('dateFilterBtn', [], 'All Dates');
-    updateFilterButtonText('timeFilterBtn', [], 'All Times');
     updateFilterButtonText('locationFilterBtn', [], 'All Locations');
     updateFilterButtonText('typeFilterBtn', [], 'All Types');
     // Uncheck all type checkboxes
     document.querySelectorAll('#typeFilterOptions input[type="checkbox"]').forEach(cb => {
         cb.checked = false;
     });
+    // Reset time slider (this also updates the button text via updateTimeDisplay)
+    updateTimeSlider();
     populateFilterDropdowns(allRidesData);
     displayRides(allRidesData);
 }
@@ -324,7 +423,6 @@ function resetFilters() {
 function populateFilterDropdowns(rides) {
     populateDateFilter(rides);
     populateAirportFilter(rides);
-    populateTimeFilter(rides);
     populateLocationFilter(rides);
 }
 
@@ -426,89 +524,6 @@ function populateAirportFilter(rides) {
     }
 }
 
-function populateTimeFilter(rides) {
-    // Filter rides based on current tab first
-    const tabFilteredRides = rides.filter(ride => {
-        if (currentTab === 'departures') {
-            return ride['Dep Date'] && ride['Dep Airport'];
-        } else {
-            return ride['Arr Date'] && ride['Arr Airport'];
-        }
-    });
-    
-    const timeRanges = new Set();
-    
-    // Add time ranges from individual rides
-    tabFilteredRides.forEach(ride => {
-        const time = currentTab === 'departures' ? ride['Dep Time'] : ride['Arr Time'];
-        if (time) {
-            // Categorize times into ranges using LOCAL time
-            const timeStr = String(time).trim();
-            let hours;
-            
-            if (timeStr.includes('T') && timeStr.includes('Z')) {
-                // UTC time - convert to local
-                const fullDate = new Date(timeStr);
-                hours = fullDate.getHours(); // Gets local hours
-            } else if (timeStr.includes('T')) {
-                // ISO format but not UTC
-                hours = parseInt(timeStr.split('T')[1].split(':')[0]);
-            } else if (timeStr.includes(':')) {
-                hours = parseInt(timeStr.split(':')[0]);
-            }
-            
-            if (hours !== undefined) {
-                if (hours >= 3 && hours < 9) timeRanges.add('Early Morning (3-9am)');
-                else if (hours >= 9 && hours < 12) timeRanges.add('Morning (9am-12pm)');
-                else if (hours >= 12 && hours < 17) timeRanges.add('Afternoon (12-5pm)');
-                else if (hours >= 17 && hours < 21) timeRanges.add('Evening (5-9pm)');
-                else timeRanges.add('Night (9pm-3am)');
-            }
-        }
-    });
-    
-    // Add time ranges from shuttles
-    const shuttles = currentTab === 'departures' ? DEPARTURE_SHUTTLES : ARRIVAL_SHUTTLES;
-    shuttles.forEach(shuttle => {
-        const hours = parseInt(shuttle.time.split(':')[0]);
-        if (hours >= 3 && hours < 9) timeRanges.add('Early Morning (3-9am)');
-        else if (hours >= 9 && hours < 12) timeRanges.add('Morning (9am-12pm)');
-        else if (hours >= 12 && hours < 17) timeRanges.add('Afternoon (12-5pm)');
-        else if (hours >= 17 && hours < 21) timeRanges.add('Evening (5-9pm)');
-        else timeRanges.add('Night (9pm-3am)');
-    });
-    
-    // Populate time checkboxes - show all time ranges, always enabled
-    const timeOptions = document.getElementById('timeFilterOptions');
-    timeOptions.innerHTML = '';
-    const timeOrder = ['Early Morning (3-9am)', 'Morning (9am-12pm)', 'Afternoon (12-5pm)', 'Evening (5-9pm)', 'Night (9pm-3am)'];
-    timeOrder.forEach(timeRange => {
-        const option = document.createElement('div');
-        option.className = 'filter-option';
-        
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.id = `time-${timeRange}`;
-        checkbox.value = timeRange;
-        checkbox.checked = filters.times.includes(timeRange);
-        // Always enabled - let users select any time
-        checkbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                filters.times.push(timeRange);
-            } else {
-                filters.times = filters.times.filter(t => t !== timeRange);
-            }
-            updateFilterButtonText('timeFilterBtn', filters.times, 'All Times');
-            displayRides(allRidesData);
-        });
-        const label = document.createElement('label');
-        label.htmlFor = `time-${timeRange}`;
-        label.textContent = timeRange;
-        option.appendChild(checkbox);
-        option.appendChild(label);
-        timeOptions.appendChild(option);
-    });
-}
 
 function populateLocationFilter(rides) {
     // Filter rides based on current tab first
@@ -830,35 +845,37 @@ function displayRides(rides) {
         });
     }
     
-    if (filters.times.length > 0) {
+    // Time filter - check if time is within slider range
+    if (filters.timeMin !== 0 || filters.timeMax !== 1440) {
         filteredRides = filteredRides.filter(ride => {
             const time = currentTab === 'departures' ? ride['Dep Time'] : ride['Arr Time'];
             if (!time) return false;
             
             const timeStr = String(time).trim();
-            let hours;
+            let hours, minutes;
             
             if (timeStr.includes('T') && timeStr.includes('Z')) {
                 // UTC time - convert to local
                 const fullDate = new Date(timeStr);
-                hours = fullDate.getHours(); // Gets local hours
+                hours = fullDate.getHours();
+                minutes = fullDate.getMinutes();
             } else if (timeStr.includes('T')) {
                 // ISO format but not UTC
-                hours = parseInt(timeStr.split('T')[1].split(':')[0]);
+                const timePart = timeStr.split('T')[1].split(':');
+                hours = parseInt(timePart[0]);
+                minutes = parseInt(timePart[1] || 0);
             } else if (timeStr.includes(':')) {
-                hours = parseInt(timeStr.split(':')[0]);
+                const parts = timeStr.split(':');
+                hours = parseInt(parts[0]);
+                minutes = parseInt(parts[1] || 0);
             }
             
             if (hours === undefined) return false;
             
-            return filters.times.some(timeRange => {
-                if (timeRange === 'Early Morning (3-9am)') return hours >= 3 && hours < 9;
-                if (timeRange === 'Morning (9am-12pm)') return hours >= 9 && hours < 12;
-                if (timeRange === 'Afternoon (12-5pm)') return hours >= 12 && hours < 17;
-                if (timeRange === 'Evening (5-9pm)') return hours >= 17 && hours < 21;
-                if (timeRange === 'Night (9pm-3am)') return hours >= 21 || hours < 3;
-                return false;
-            });
+            // Convert to minutes from midnight
+            const rideMinutes = hours * 60 + minutes;
+            
+            return rideMinutes >= filters.timeMin && rideMinutes <= filters.timeMax;
         });
     }
     
@@ -906,8 +923,6 @@ function displayRides(rides) {
         return 0;
     });
     
-    let html = '<div class="rides-grid">';
-    
     // ===== PREPARE SHUTTLES =====
     let shuttles = currentTab === 'departures' ? DEPARTURE_SHUTTLES : ARRIVAL_SHUTTLES;
     
@@ -929,18 +944,15 @@ function displayRides(rides) {
         shuttles = shuttles.filter(shuttle => shuttle.airport === filters.airport);
     }
     
-    // Time filter
-    if (filters.times.length > 0) {
+    // Time filter for shuttles
+    if (filters.timeMin !== 0 || filters.timeMax !== 1440) {
         shuttles = shuttles.filter(shuttle => {
-            const hours = parseInt(shuttle.time.split(':')[0]);
-            return filters.times.some(timeRange => {
-                if (timeRange === 'Early Morning (3-9am)') return hours >= 3 && hours < 9;
-                if (timeRange === 'Morning (9am-12pm)') return hours >= 9 && hours < 12;
-                if (timeRange === 'Afternoon (12-5pm)') return hours >= 12 && hours < 17;
-                if (timeRange === 'Evening (5-9pm)') return hours >= 17 && hours < 21;
-                if (timeRange === 'Night (9pm-3am)') return hours >= 21 || hours < 3;
-                return false;
-            });
+            const timeParts = shuttle.time.split(':');
+            const hours = parseInt(timeParts[0]);
+            const minutes = parseInt(timeParts[1] || 0);
+            const shuttleMinutes = hours * 60 + minutes;
+            
+            return shuttleMinutes >= filters.timeMin && shuttleMinutes <= filters.timeMax;
         });
     }
     
@@ -958,331 +970,310 @@ function displayRides(rides) {
         return;
     }
     
-    // ===== COMBINE SHUTTLES AND RIDES INTO ONE ARRAY FOR CHRONOLOGICAL SORTING =====
-    const allItems = [];
+    let html = '';
     
-    // Add shuttles with type marker and sortable datetime
-    shuttles.forEach(shuttle => {
-        allItems.push({
-            type: 'shuttle',
-            data: shuttle,
-            sortDateTime: `${shuttle.date}T${shuttle.time}:00` // e.g., "2025-12-19T08:30:00"
-        });
-    });
-    
-    // Add individual rides with type marker and sortable datetime
-    filteredRides.forEach(ride => {
-        const date = currentTab === 'departures' ? ride['Dep Date'] : ride['Arr Date'];
-        const time = currentTab === 'departures' ? ride['Dep Time'] : ride['Arr Time'];
+    // ===== SHUTTLES SECTION =====
+    if (shuttles.length > 0) {
+        html += '<div class="section-divider">';
+        html += '<h3 class="section-title">🚐 Official Shuttles</h3>';
+        html += '<p class="section-subtitle">Cheapest option - Book early!</p>';
+        html += '</div>';
+        html += '<div class="rides-grid">';
         
-        // Extract date and time for sorting
-        let sortDate = date ? date.split('T')[0] : '9999-12-31'; // Far future if no date
-        let sortTime = '00:00:00';
-        
-        if (time) {
-            const timeStr = String(time).trim();
-            if (timeStr.includes('T') && timeStr.includes('Z')) {
-                // UTC time - convert to local for sorting
-                const fullDate = new Date(timeStr);
-                const hours = String(fullDate.getHours()).padStart(2, '0');
-                const mins = String(fullDate.getMinutes()).padStart(2, '0');
-                sortTime = `${hours}:${mins}:00`;
-            } else if (timeStr.includes('T')) {
-                sortTime = timeStr.split('T')[1].split('.')[0];
-            } else if (timeStr.includes(':')) {
-                const parts = timeStr.split(':');
-                sortTime = `${parts[0].padStart(2, '0')}:${parts[1] || '00'}:00`;
-            }
-        }
-        
-        allItems.push({
-            type: 'ride',
-            data: ride,
-            sortDateTime: `${sortDate}T${sortTime}`
-        });
-    });
-    
-    // Sort all items chronologically
-    allItems.sort((a, b) => a.sortDateTime.localeCompare(b.sortDateTime));
-    
-    // ===== RENDER ALL ITEMS IN CHRONOLOGICAL ORDER =====
-    allItems.forEach(item => {
-        if (item.type === 'shuttle') {
-            // Render shuttle card
-            const shuttle = item.data;
-        // Parse date manually to avoid timezone issues
-        const [year, month, day] = shuttle.date.split('-').map(Number);
-        const shuttleDate = new Date(year, month - 1, day); // Create in local timezone
-        
-        const formattedDate = shuttleDate.toLocaleDateString('en-US', { 
-            weekday: 'short', 
-            month: 'numeric', 
-            day: 'numeric' 
+        // Sort shuttles chronologically
+        const sortedShuttles = shuttles.slice().sort((a, b) => {
+            const dateTimeA = `${a.date}T${a.time}:00`;
+            const dateTimeB = `${b.date}T${b.time}:00`;
+            return dateTimeA.localeCompare(dateTimeB);
         });
         
-        // Format time to 12-hour format
-        const [hours24, minutes] = shuttle.time.split(':');
-        const hours = parseInt(hours24);
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        const hours12 = hours % 12 || 12;
-        const formattedTime = `${hours12}:${minutes} ${ampm}`;
-        
-        const icon = currentTab === 'departures' ? '🛫' : '🛬';
-        const airportText = `${icon} ${shuttle.airport}`;
-        
-        // Determine card classes
-        let cardClasses = 'ride-card shuttle-card';
-        if (shuttle.lowTickets) cardClasses += ' low-tickets';
-        if (shuttle.soldOut) cardClasses += ' sold-out';
-        
-        // Button text and class
-        const btnText = shuttle.soldOut ? 'Join Waitlist' : 'Buy Tickets ($5)';
-        const btnClass = shuttle.soldOut ? 'shuttle-buy-btn waitlist' : 'shuttle-buy-btn';
-        
-        html += `
-            <div class="${cardClasses}">
-                <div class="card-header">
-                    <div class="date-time">
-                        <span class="date-large">${formattedDate}</span>
-                        <span class="time-large">${formattedTime}</span>
+        sortedShuttles.forEach(shuttle => {
+            // Parse date manually to avoid timezone issues
+            const [year, month, day] = shuttle.date.split('-').map(Number);
+            const shuttleDate = new Date(year, month - 1, day);
+            
+            const formattedDate = shuttleDate.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'numeric', 
+                day: 'numeric' 
+            });
+            
+            // Format time to 12-hour format
+            const [hours24, minutes] = shuttle.time.split(':');
+            const hours = parseInt(hours24);
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const hours12 = hours % 12 || 12;
+            const formattedTime = `${hours12}:${minutes} ${ampm}`;
+            
+            const icon = currentTab === 'departures' ? '🛫' : '🛬';
+            const airportText = `${icon} ${shuttle.airport}`;
+            
+            // Determine card classes
+            let cardClasses = 'ride-card shuttle-card';
+            if (shuttle.lowTickets) cardClasses += ' low-tickets';
+            if (shuttle.soldOut) cardClasses += ' sold-out';
+            
+            // Button text and class
+            const btnText = shuttle.soldOut ? 'Join Waitlist' : 'Buy Tickets ($5)';
+            const btnClass = shuttle.soldOut ? 'shuttle-buy-btn waitlist' : 'shuttle-buy-btn';
+            
+            html += `
+                <div class="${cardClasses}">
+                    <div class="card-header">
+                        <div class="date-time">
+                            <span class="date-large">${formattedDate}</span>
+                            <span class="time-large">${formattedTime}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-info">
+                        <div class="card-airport-airline">${airportText}</div>
+                        <div class="card-location">🚌 Direct from campus</div>
+                    </div>
+                    
+                    <div class="card-actions">
+                        <a href="${SHUTTLE_TICKET_URL}" target="_blank" class="${btnClass}">${btnText}</a>
                     </div>
                 </div>
-                
-                <div class="card-info">
-                    <div class="card-airport-airline">${airportText}</div>
-                    <div class="card-location">🚌 Direct from campus</div>
-                </div>
-                
-                <div class="card-actions">
-                    <a href="${SHUTTLE_TICKET_URL}" target="_blank" class="${btnClass}">${btnText}</a>
-                </div>
-            </div>
-        `;
-        } else {
-            // Render individual ride card
-            const ride = item.data;
-        console.log('--- Processing ride ---');
-        console.log('Name:', ride['First Name'], ride['Last Name']);
-        console.log('Dep Time:', ride['Dep Time']);
-        console.log('Arr Time:', ride['Arr Time']);
+            `;
+        });
         
-        // Determine which info to show based on current tab
-        let date, time, airport, airline, icon;
+        html += '</div>'; // Close shuttles grid
+    }
+    
+    // ===== INDIVIDUAL RIDES SECTION =====
+    if (filteredRides.length > 0) {
+        html += '<div class="section-divider">';
+        html += '<h3 class="section-title">🚗 Individual Rides</h3>';
+        html += '<p class="section-subtitle">Share costs with fellow students</p>';
+        html += '</div>';
+        html += '<div class="rides-grid">';
         
-        if (currentTab === 'departures') {
-            date = ride['Dep Date'];
-            time = ride['Dep Time'];
-            airport = ride['Dep Airport'];
-            airline = ride['Dep Airline'];
-            icon = '🛫';
-        } else {
-            date = ride['Arr Date'];
-            time = ride['Arr Time'];
-            airport = ride['Arr Airport'];
-            airline = ride['Arr Airline'];
-            icon = '🛬';
-        }
-        
-        // Format time to 12-hour format with AM/PM
-        let formattedTime = 'Time TBD';
-        if (time) {
-            console.log('Raw time value:', time, 'Type:', typeof time);
-            const timeStr = String(time).trim();
-            console.log('Time string after trim:', timeStr);
+        // filteredRides are already sorted chronologically earlier in the function
+        filteredRides.forEach(ride => {
+            console.log('--- Processing ride ---');
+            console.log('Name:', ride['First Name'], ride['Last Name']);
+            console.log('Dep Time:', ride['Dep Time']);
+            console.log('Arr Time:', ride['Arr Time']);
             
-            if (timeStr && timeStr !== '' && timeStr !== 'undefined' && timeStr !== 'null') {
-                let hours24, minutes;
-                
-                // Check if it's an ISO datetime format (e.g., "1899-12-30T16:00:00.000Z")
-                if (timeStr.includes('T') && timeStr.includes(':') && timeStr.includes('Z')) {
-                    // This is a UTC time from Google Sheets - need to convert to local time
-                    const fullDate = new Date(timeStr);
-                    hours24 = fullDate.getHours(); // This gets local hours
-                    minutes = String(fullDate.getMinutes()).padStart(2, '0');
-                    console.log('Parsed from ISO UTC format - local hours24:', hours24, 'minutes:', minutes);
-                } else if (timeStr.includes('T') && timeStr.includes(':')) {
-                    // ISO format but not UTC marked - extract time portion
-                    const timePortion = timeStr.split('T')[1].split('.')[0]; // Gets "23:00:00"
-                    const [hourStr, minuteStr] = timePortion.split(':');
-                    hours24 = parseInt(hourStr, 10);
-                    minutes = minuteStr;
-                    console.log('Parsed from ISO format - hours24:', hours24, 'minutes:', minutes);
-                } else if (timeStr.includes(':')) {
-                    // Regular HH:MM format
-                    const [hourStr, minuteStr] = timeStr.split(':');
-                    hours24 = parseInt(hourStr, 10);
-                    minutes = minuteStr ? minuteStr.substring(0, 2) : '00';
-                    console.log('Parsed from HH:MM format - hours24:', hours24, 'minutes:', minutes);
-                } else {
-                    // Try parsing as just a number
-                    hours24 = parseInt(timeStr, 10);
-                    minutes = '00';
-                    console.log('Parsed as number - hours24:', hours24);
-                }
-                
-                console.log('Parsed hours24:', hours24, 'minutes:', minutes);
-                
-                if (!isNaN(hours24) && hours24 >= 0 && hours24 <= 23) {
-                    const ampm = hours24 >= 12 ? 'PM' : 'AM';
-                    const hours12 = hours24 % 12 || 12;
-                    formattedTime = `${hours12}:${minutes} ${ampm}`;
-                    console.log('Formatted time:', formattedTime);
-                }
-            }
-        } else {
-            console.log('Time is null/undefined/falsy');
-        }
-        
-        console.log('Selected data for', currentTab, '- date:', date, 'time:', time, 'airport:', airport, 'airline:', airline);
-        
-        // Extract airport code (first 3 letters before the dash)
-        const airportCode = airport ? airport.split(' ')[0] : '';
-        
-        // Build airport + airline text with comma if both exist
-        let airportAirlineText = icon;
-        if (airportCode) {
-            airportAirlineText += ` ${airportCode}`;
-            if (airline) {
-                airportAirlineText += `, ${airline}`;
-            }
-        } else if (airline) {
-            airportAirlineText += ` ${airline}`;
-        } else {
-            airportAirlineText += ' Airport TBD';
-        }
-        
-        // Create pre-filled email with subject and body
-        // Try to get user's stored info from localStorage
-        const userInfo = JSON.parse(localStorage.getItem('dawaShare_userInfo') || '{}');
-        
-        let emailBody = `Hi ${ride['First Name']},\n\n` +
-            `I found your ride on dawaShare and I'm traveling around the same time!\n\n`;
-        
-        // Add recipient's info as context
-        emailBody += `You're ${currentTab === 'departures' ? 'departing' : 'arriving'} on ${formatDate(date)} at ${formattedTime} from ${airportCode || 'TBD'}${airline ? ` (${airline})` : ''}.\n\n`;
-        
-        // If we have user's info, include ONLY the relevant travel details based on current tab
-        if (userInfo.firstName) {
-            emailBody += `Here's my travel info:\n`;
+            // Determine which info to show based on current tab
+            let date, time, airport, airline, icon;
             
             if (currentTab === 'departures') {
-                // On departures tab - only show departure info
-                if (userInfo.depDate && userInfo.depTime) {
-                    const depAirportCode = userInfo.depAirport ? userInfo.depAirport.split(' ')[0] : 'TBD';
-                    
-                    // Parse user's departure time
-                    let userDepTime = 'TBD';
-                    if (userInfo.depTime) {
-                        const timeStr = String(userInfo.depTime).trim();
-                        if (timeStr.includes('T')) {
-                            const timePart = timeStr.split('T')[1];
-                            const [hours, minutes] = timePart.split(':');
-                            const hours24 = parseInt(hours);
-                            const ampm = hours24 >= 12 ? 'PM' : 'AM';
-                            const hours12 = hours24 % 12 || 12;
-                            userDepTime = `${hours12}:${minutes} ${ampm}`;
-                        } else if (timeStr.includes(':')) {
-                            const [hours, minutes] = timeStr.split(':');
-                            const hours24 = parseInt(hours);
-                            const ampm = hours24 >= 12 ? 'PM' : 'AM';
-                            const hours12 = hours24 % 12 || 12;
-                            userDepTime = `${hours12}:${minutes} ${ampm}`;
-                        }
-                    }
-                    
-                    emailBody += `• Departing: ${formatDate(userInfo.depDate)} at ${userDepTime} from ${depAirportCode}`;
-                    if (userInfo.depAirline) {
-                        emailBody += ` (${userInfo.depAirline})`;
-                    }
-                    emailBody += `\n`;
-                } else {
-                    emailBody += `• Departing: [ ADD YOUR DEPARTURE DETAILS ]\n`;
-                }
+                date = ride['Dep Date'];
+                time = ride['Dep Time'];
+                airport = ride['Dep Airport'];
+                airline = ride['Dep Airline'];
+                icon = '🛫';
             } else {
-                // On arrivals tab - only show arrival info
-                if (userInfo.arrDate && userInfo.arrTime) {
-                    const arrAirportCode = userInfo.arrAirport ? userInfo.arrAirport.split(' ')[0] : 'TBD';
-                    
-                    // Parse user's arrival time
-                    let userArrTime = 'TBD';
-                    if (userInfo.arrTime) {
-                        const timeStr = String(userInfo.arrTime).trim();
-                        if (timeStr.includes('T')) {
-                            const timePart = timeStr.split('T')[1];
-                            const [hours, minutes] = timePart.split(':');
-                            const hours24 = parseInt(hours);
-                            const ampm = hours24 >= 12 ? 'PM' : 'AM';
-                            const hours12 = hours24 % 12 || 12;
-                            userArrTime = `${hours12}:${minutes} ${ampm}`;
-                        } else if (timeStr.includes(':')) {
-                            const [hours, minutes] = timeStr.split(':');
-                            const hours24 = parseInt(hours);
-                            const ampm = hours24 >= 12 ? 'PM' : 'AM';
-                            const hours12 = hours24 % 12 || 12;
-                            userArrTime = `${hours12}:${minutes} ${ampm}`;
-                        }
-                    }
-                    
-                    emailBody += `• Arriving: ${formatDate(userInfo.arrDate)} at ${userArrTime} to ${arrAirportCode}`;
-                    if (userInfo.arrAirline) {
-                        emailBody += ` (${userInfo.arrAirline})`;
-                    }
-                    emailBody += `\n`;
-                } else {
-                    emailBody += `• Arriving: [ ADD YOUR ARRIVAL DETAILS ]\n`;
-                }
+                date = ride['Arr Date'];
+                time = ride['Arr Time'];
+                airport = ride['Arr Airport'];
+                airline = ride['Arr Airline'];
+                icon = '🛬';
             }
             
-            // Always prompt for location (whether they have it or not)
-            if (userInfo.location) {
-                emailBody += `• Location: ${userInfo.location}\n`;
+            // Format time to 12-hour format with AM/PM
+            let formattedTime = 'Time TBD';
+            if (time) {
+                console.log('Raw time value:', time, 'Type:', typeof time);
+                const timeStr = String(time).trim();
+                console.log('Time string after trim:', timeStr);
+                
+                if (timeStr && timeStr !== '' && timeStr !== 'undefined' && timeStr !== 'null') {
+                    let hours24, minutes;
+                    
+                    // Check if it's an ISO datetime format (e.g., "1899-12-30T16:00:00.000Z")
+                    if (timeStr.includes('T') && timeStr.includes(':') && timeStr.includes('Z')) {
+                        // This is a UTC time from Google Sheets - need to convert to local time
+                        const fullDate = new Date(timeStr);
+                        hours24 = fullDate.getHours(); // This gets local hours
+                        minutes = String(fullDate.getMinutes()).padStart(2, '0');
+                        console.log('Parsed from ISO UTC format - local hours24:', hours24, 'minutes:', minutes);
+                    } else if (timeStr.includes('T') && timeStr.includes(':')) {
+                        // ISO format but not UTC marked - extract time portion
+                        const timePortion = timeStr.split('T')[1].split('.')[0]; // Gets "23:00:00"
+                        const [hourStr, minuteStr] = timePortion.split(':');
+                        hours24 = parseInt(hourStr, 10);
+                        minutes = minuteStr;
+                        console.log('Parsed from ISO format - hours24:', hours24, 'minutes:', minutes);
+                    } else if (timeStr.includes(':')) {
+                        // Regular HH:MM format
+                        const [hourStr, minuteStr] = timeStr.split(':');
+                        hours24 = parseInt(hourStr, 10);
+                        minutes = minuteStr ? minuteStr.substring(0, 2) : '00';
+                        console.log('Parsed from HH:MM format - hours24:', hours24, 'minutes:', minutes);
+                    } else {
+                        // Try parsing as just a number
+                        hours24 = parseInt(timeStr, 10);
+                        minutes = '00';
+                        console.log('Parsed as number - hours24:', hours24);
+                    }
+                    
+                    console.log('Parsed hours24:', hours24, 'minutes:', minutes);
+                    
+                    if (!isNaN(hours24) && hours24 >= 0 && hours24 <= 23) {
+                        const ampm = hours24 >= 12 ? 'PM' : 'AM';
+                        const hours12 = hours24 % 12 || 12;
+                        formattedTime = `${hours12}:${minutes} ${ampm}`;
+                        console.log('Formatted time:', formattedTime);
+                    }
+                }
             } else {
-                emailBody += `• Location: [ ADD YOUR LOCATION ]\n`;
+                console.log('Time is null/undefined/falsy');
             }
             
-            emailBody += `\nWould you be interested in sharing a ride?\n\n`;
-            emailBody += `Best,\n${userInfo.firstName}`;
-        } else {
-            // No stored info - use simple template
-            emailBody += `I'd love to share a ride if our times work out. Here are my travel details:\n\n`;
-            emailBody += `• ${currentTab === 'departures' ? 'Departing' : 'Arriving'}: [ ADD YOUR ${currentTab === 'departures' ? 'DEPARTURE' : 'ARRIVAL'} INFO HERE ]\n`;
-            emailBody += `• Location: [ ADD YOUR LOCATION HERE ]\n\n`;
-            emailBody += `Let me know if you're interested!\n\n`;
-            emailBody += `Best,\n[Your name]`;
-        }
-        
-        const emailSubject = encodeURIComponent('dawaShare: Let\'s share a ride!');
-        const mailtoLink = `mailto:${ride['Email']}?subject=${emailSubject}&body=${encodeURIComponent(emailBody)}`;
-        
-        html += `
-            <div class="ride-card">
-                <div class="card-header">
-                    <div class="date-time">
-                        <span class="date-large">${formatDate(date)}</span>
-                        <span class="time-large">${formattedTime}</span>
+            console.log('Selected data for', currentTab, '- date:', date, 'time:', time, 'airport:', airport, 'airline:', airline);
+            
+            // Extract airport code (first 3 letters before the dash)
+            const airportCode = airport ? airport.split(' ')[0] : '';
+            
+            // Build airport + airline text with comma if both exist
+            let airportAirlineText = icon;
+            if (airportCode) {
+                airportAirlineText += ` ${airportCode}`;
+                if (airline) {
+                    airportAirlineText += `, ${airline}`;
+                }
+            } else if (airline) {
+                airportAirlineText += ` ${airline}`;
+            } else {
+                airportAirlineText += ' Airport TBD';
+            }
+            
+            // Create pre-filled email with subject and body
+            // Try to get user's stored info from localStorage
+            const userInfo = JSON.parse(localStorage.getItem('dawaShare_userInfo') || '{}');
+            
+            let emailBody = `Hi ${ride['First Name']},\n\n` +
+                `I found your ride on dawaShare and I'm traveling around the same time!\n\n`;
+            
+            // Add recipient's info as context
+            emailBody += `You're ${currentTab === 'departures' ? 'departing' : 'arriving'} on ${formatDate(date)} at ${formattedTime} from ${airportCode || 'TBD'}${airline ? ` (${airline})` : ''}.\n\n`;
+            
+            // If we have user's info, include ONLY the relevant travel details based on current tab
+            if (userInfo.firstName) {
+                emailBody += `Here's my travel info:\n`;
+                
+                if (currentTab === 'departures') {
+                    // On departures tab - only show departure info
+                    if (userInfo.depDate && userInfo.depTime) {
+                        const depAirportCode = userInfo.depAirport ? userInfo.depAirport.split(' ')[0] : 'TBD';
+                        
+                        // Parse user's departure time
+                        let userDepTime = 'TBD';
+                        if (userInfo.depTime) {
+                            const timeStr = String(userInfo.depTime).trim();
+                            if (timeStr.includes('T')) {
+                                const timePart = timeStr.split('T')[1];
+                                const [hours, minutes] = timePart.split(':');
+                                const hours24 = parseInt(hours);
+                                const ampm = hours24 >= 12 ? 'PM' : 'AM';
+                                const hours12 = hours24 % 12 || 12;
+                                userDepTime = `${hours12}:${minutes} ${ampm}`;
+                            } else if (timeStr.includes(':')) {
+                                const [hours, minutes] = timeStr.split(':');
+                                const hours24 = parseInt(hours);
+                                const ampm = hours24 >= 12 ? 'PM' : 'AM';
+                                const hours12 = hours24 % 12 || 12;
+                                userDepTime = `${hours12}:${minutes} ${ampm}`;
+                            }
+                        }
+                        
+                        emailBody += `• Departing: ${formatDate(userInfo.depDate)} at ${userDepTime} from ${depAirportCode}`;
+                        if (userInfo.depAirline) {
+                            emailBody += ` (${userInfo.depAirline})`;
+                        }
+                        emailBody += `\n`;
+                    } else {
+                        emailBody += `• Departing: [ ADD YOUR DEPARTURE DETAILS ]\n`;
+                    }
+                } else {
+                    // On arrivals tab - only show arrival info
+                    if (userInfo.arrDate && userInfo.arrTime) {
+                        const arrAirportCode = userInfo.arrAirport ? userInfo.arrAirport.split(' ')[0] : 'TBD';
+                        
+                        // Parse user's arrival time
+                        let userArrTime = 'TBD';
+                        if (userInfo.arrTime) {
+                            const timeStr = String(userInfo.arrTime).trim();
+                            if (timeStr.includes('T')) {
+                                const timePart = timeStr.split('T')[1];
+                                const [hours, minutes] = timePart.split(':');
+                                const hours24 = parseInt(hours);
+                                const ampm = hours24 >= 12 ? 'PM' : 'AM';
+                                const hours12 = hours24 % 12 || 12;
+                                userArrTime = `${hours12}:${minutes} ${ampm}`;
+                            } else if (timeStr.includes(':')) {
+                                const [hours, minutes] = timeStr.split(':');
+                                const hours24 = parseInt(hours);
+                                const ampm = hours24 >= 12 ? 'PM' : 'AM';
+                                const hours12 = hours24 % 12 || 12;
+                                userArrTime = `${hours12}:${minutes} ${ampm}`;
+                            }
+                        }
+                        
+                        emailBody += `• Arriving: ${formatDate(userInfo.arrDate)} at ${userArrTime} to ${arrAirportCode}`;
+                        if (userInfo.arrAirline) {
+                            emailBody += ` (${userInfo.arrAirline})`;
+                        }
+                        emailBody += `\n`;
+                    } else {
+                        emailBody += `• Arriving: [ ADD YOUR ARRIVAL DETAILS ]\n`;
+                    }
+                }
+                
+                // Always prompt for location (whether they have it or not)
+                if (userInfo.location) {
+                    emailBody += `• Location: ${userInfo.location}\n`;
+                } else {
+                    emailBody += `• Location: [ ADD YOUR LOCATION ]\n`;
+                }
+                
+                emailBody += `\nWould you be interested in sharing a ride?\n\n`;
+                emailBody += `Best,\n${userInfo.firstName}`;
+            } else {
+                // No stored info - use simple template
+                emailBody += `I'd love to share a ride if our times work out. Here are my travel details:\n\n`;
+                emailBody += `• ${currentTab === 'departures' ? 'Departing' : 'Arriving'}: [ ADD YOUR ${currentTab === 'departures' ? 'DEPARTURE' : 'ARRIVAL'} INFO HERE ]\n`;
+                emailBody += `• Location: [ ADD YOUR LOCATION HERE ]\n\n`;
+                emailBody += `Let me know if you're interested!\n\n`;
+                emailBody += `Best,\n[Your name]`;
+            }
+            
+            const emailSubject = encodeURIComponent('dawaShare: Let\'s share a ride!');
+            const mailtoLink = `mailto:${ride['Email']}?subject=${emailSubject}&body=${encodeURIComponent(emailBody)}`;
+            
+            html += `
+                <div class="ride-card">
+                    <div class="card-header">
+                        <div class="date-time">
+                            <span class="date-large">${formatDate(date)}</span>
+                            <span class="time-large">${formattedTime}</span>
+                        </div>
+                        <div class="rider-name-small">${ride['First Name']} ${ride['Last Name']}</div>
                     </div>
-                    <div class="rider-name-small">${ride['First Name']} ${ride['Last Name']}</div>
+                    
+                    <div class="card-info">
+                        <div class="card-airport-airline">${airportAirlineText}</div>
+                        ${ride['Location'] ? `<div class="card-location">📍 ${ride['Location']}${ride['Location'] === 'Other / Off-Campus' && ride['Location Other'] ? ` (${ride['Location Other']})` : ''}</div>` : ''}
+                    </div>
+                    
+                    <div class="card-actions">
+                        ${ride['Phone'] ? `
+                            <a href="${mailtoLink}" class="contact-btn">✉️ Email</a>
+                            <a href="sms:${ride['Phone']}" class="contact-btn phone-btn">💬 Text</a>
+                        ` : `
+                            <a href="${mailtoLink}" class="contact-btn contact-btn-full">✉️ Email</a>
+                        `}
+                    </div>
                 </div>
-                
-                <div class="card-info">
-                    <div class="card-airport-airline">${airportAirlineText}</div>
-                    ${ride['Location'] ? `<div class="card-location">📍 ${ride['Location']}${ride['Location'] === 'Other / Off-Campus' && ride['Location Other'] ? ` (${ride['Location Other']})` : ''}</div>` : ''}
-                </div>
-                
-                <div class="card-actions">
-                    ${ride['Phone'] ? `
-                        <a href="${mailtoLink}" class="contact-btn">✉️ Email</a>
-                        <a href="sms:${ride['Phone']}" class="contact-btn phone-btn">💬 Text</a>
-                    ` : `
-                        <a href="${mailtoLink}" class="contact-btn contact-btn-full">✉️ Email</a>
-                    `}
-                </div>
-            </div>
-        `;
-        } // End if shuttle vs ride
-    }); // End allItems.forEach
+            `;
+        });
+        
+        html += '</div>'; // Close individuals grid
+    }
     
-    html += '</div>';
     ridesTable.innerHTML = html;
 }
 
@@ -1373,6 +1364,23 @@ document.getElementById('arrDate').setAttribute('max', maxDateStr);
 window.addEventListener('DOMContentLoaded', () => {
     populateDropdowns();
     loadRides();
+    // Initialize time slider
+    updateSliderRange();
+    updateTimeDisplay();
     // Show modal automatically on page load
     modal.classList.add('active');
+});
+// ===== PARALLAX BACKGROUND EFFECT =====
+let ticking = false;
+window.addEventListener('scroll', () => {
+    if (!ticking) {
+        window.requestAnimationFrame(() => {
+            const scrolled = window.pageYOffset;
+            // Move grid at 15% speed of scroll (slower parallax)
+            const parallaxOffset = scrolled * 0.15;
+            document.body.style.setProperty('--parallax-y', `${parallaxOffset}px`);
+            ticking = false;
+        });
+        ticking = true;
+    }
 });

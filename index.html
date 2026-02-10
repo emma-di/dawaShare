@@ -10,7 +10,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -81,18 +81,37 @@
                     <option value="">All Airports</option>
                 </select>
                 
-                <!-- Time Filter (Multi-select) -->
+                <!-- Time Filter (Slider) -->
                 <div class="filter-dropdown">
                     <button class="filter-dropdown-btn" id="timeFilterBtn">
                         All Times
                         <span class="dropdown-arrow">▼</span>
                     </button>
-                    <div class="filter-dropdown-panel" id="timeFilterPanel">
-                        <div class="filter-options" id="timeFilterOptions">
-                            <!-- Checkboxes will be populated here -->
+                    <div class="filter-dropdown-panel time-slider-panel" id="timeFilterPanel">
+                        <div class="time-slider-container">
+                            <div class="time-slider-header">
+                                <span class="time-slider-label" id="timeRangeDisplay">12:00 AM - 12:00 AM</span>
+                                <p class="time-slider-note">Flight departure/arrival time at airport</p>
+                            </div>
+                            <div class="time-slider-wrapper">
+                                <input type="range" id="timeSliderMin" class="time-slider time-slider-min" 
+                                       min="0" max="1440" value="0" step="30">
+                                <input type="range" id="timeSliderMax" class="time-slider time-slider-max" 
+                                       min="0" max="1440" value="1440" step="30">
+                                <div class="time-slider-track">
+                                    <div class="time-slider-range" id="timeSliderRange"></div>
+                                </div>
+                            </div>
+                            <div class="time-slider-labels">
+                                <span>12:00 AM</span>
+                                <span>6:00 AM</span>
+                                <span>12:00 PM</span>
+                                <span>6:00 PM</span>
+                                <span>12:00 AM</span>
+                            </div>
                         </div>
                         <div class="filter-panel-footer">
-                            <button class="clear-filter-btn" id="clearTimeBtn">Clear All</button>
+                            <button class="clear-filter-btn" id="clearTimeBtn">Reset</button>
                             <button class="done-filter-btn" id="doneTimeBtn">Done</button>
                         </div>
                     </div>
