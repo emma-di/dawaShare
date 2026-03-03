@@ -756,32 +756,49 @@ rideForm.addEventListener('submit', async (e) => {
 // ===== LOAD RIDES FROM GOOGLE SHEETS =====
 let isDataLoaded = false; // Track if we've loaded data yet
 
+const CACHE_KEY = 'dawaShareRides';
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 async function loadRides() {
-    // If data is already cached, just re-render with cached data
     if (isDataLoaded) {
         displayRides(allRidesData);
         return;
     }
-    
-    // Show loading state
+
     const ridesTable = document.getElementById('ridesTable');
-    ridesTable.innerHTML = '<p class="loading-state">Loading rides... ⏳</p>';
-    
+
+    // Show cached data instantly if available
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        const age = Date.now() - timestamp;
+        allRidesData = data;
+        isDataLoaded = true;
+        populateFilterDropdowns(allRidesData);
+        displayRides(allRidesData);
+        // If cache is fresh enough, skip the fetch
+        if (age < CACHE_TTL) return;
+    } else {
+        ridesTable.innerHTML = '<p class="loading-state">Loading rides... ⏳</p>';
+    }
+
+    // Fetch fresh data in the background
     try {
         const response = await fetch(GOOGLE_SHEET_URL);
         const result = await response.json();
-        
+
         if (result.result === 'success' && result.data.length > 0) {
             allRidesData = result.data;
-            isDataLoaded = true; // Mark data as loaded
+            isDataLoaded = true;
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ data: result.data, timestamp: Date.now() }));
             populateFilterDropdowns(allRidesData);
             displayRides(allRidesData);
-        } else {
+        } else if (!cached) {
             ridesTable.innerHTML = '<p class="empty-state">No rides yet. Be the first to share your ride info!</p>';
         }
     } catch (error) {
         console.error('Error loading rides:', error);
-        ridesTable.innerHTML = '<p class="empty-state">No rides yet. Be the first to share your ride info!</p>';
+        if (!cached) ridesTable.innerHTML = '<p class="empty-state">No rides yet. Be the first to share your ride info!</p>';
     }
 }
 
@@ -1262,7 +1279,7 @@ function displayRides(rides) {
                     <div class="card-actions">
                         ${ride['Phone'] ? `
                             <a href="${mailtoLink}" class="contact-btn">✉️ Email</a>
-                            <a href="sms:${ride['Phone']}" class="contact-btn phone-btn">💬 Text</a>
+                            <button class="contact-btn phone-btn" onclick="const shown=this.dataset.shown==='true'; if(/iPhone|Android/i.test(navigator.userAgent)){window.location='sms:${ride['Phone']}'}else{this.textContent=shown?'💬 Text':'${ride['Phone']}'; this.dataset.shown=shown?'false':'true'; this.classList.toggle('phone-btn-revealed',!shown);}">💬 Text</button>
                         ` : `
                             <a href="${mailtoLink}" class="contact-btn contact-btn-full">✉️ Email</a>
                         `}

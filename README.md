@@ -1,3 +1,5 @@
+to run locally: open index.html
+
 # dawaShare
 
 A community rideshare platform for Stanford students traveling to/from airports during breaks.

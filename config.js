@@ -55,25 +55,23 @@ const SHUTTLE_TICKET_URL = 'https://events.humanitix.com/2025-winter-shuttles';
 // ===== SHUTTLE CONFIGURATION =====
 // Outbound shuttles (Departures from Stanford to Airport)
 const DEPARTURE_SHUTTLES = [
-    { date: '2025-12-19', time: '08:30', airport: 'SFO', lowTickets: true },
-    { date: '2025-12-19', time: '19:00', airport: 'SFO', lowTickets: true },
-    { date: '2025-12-20', time: '06:30', airport: 'SFO', lowTickets: false },
-    { date: '2025-12-20', time: '09:15', airport: 'SFO', lowTickets: true },
-    { date: '2025-12-20', time: '18:00', airport: 'SFO', lowTickets: true },
-    { date: '2025-12-21', time: '05:15', airport: 'SFO', lowTickets: true },
-    { date: '2025-12-21', time: '07:30', airport: 'SFO', lowTickets: true },
-    { date: '2025-12-21', time: '08:30', airport: 'SFO', soldOut: true },
-    { date: '2025-12-21', time: '09:30', airport: 'SJC', lowTickets: false },
-    { date: '2025-12-21', time: '11:00', airport: 'SFO', soldOut: true },
-    { date: '2025-12-21', time: '13:30', airport: 'SFO', lowTickets: true }
+    { date: '2025-03-18', time: '19:45', airport: 'SFO', lowTickets: false },
+    { date: '2025-03-19', time: '17:30', airport: 'SFO', lowTickets: false },
+    { date: '2025-03-20', time: '05:30', airport: 'SFO', lowTickets: false },
+    { date: '2025-03-20', time: '08:00', airport: 'SFO', lowTickets: false },
+    { date: '2025-03-20', time: '11:30', airport: 'SFO', lowTickets: false },
+    { date: '2025-03-20', time: '19:30', airport: 'SFO', lowTickets: false },
+    { date: '2025-03-21', time: '03:30', airport: 'SFO', lowTickets: false },
+    { date: '2025-03-21', time: '05:45', airport: 'SFO', lowTickets: false },
+    { date: '2025-03-21', time: '10:00', airport: 'SFO', lowTickets: false }
 ];
 
 // Return shuttles (Arrivals from Airport to Stanford)
 const ARRIVAL_SHUTTLES = [
-    { date: '2025-01-04', time: '11:30', airport: 'SFO', lowTickets: false },
-    { date: '2025-01-04', time: '14:30', airport: 'SFO', lowTickets: false },
-    { date: '2025-01-04', time: '20:30', airport: 'SFO', lowTickets: false },
-    { date: '2025-01-05', time: '09:15', airport: 'SJC', lowTickets: false },
-    { date: '2025-01-05', time: '11:00', airport: 'SFO', lowTickets: true },
-    { date: '2025-01-05', time: '13:30', airport: 'SFO', lowTickets: false }
+    { date: '2025-03-28', time: '10:30', airport: 'SFO', lowTickets: false },
+    { date: '2025-03-28', time: '20:30', airport: 'SFO', lowTickets: false },
+    { date: '2025-03-29', time: '10:30', airport: 'SFO', lowTickets: false },
+    { date: '2025-03-29', time: '13:30', airport: 'SFO', lowTickets: false },
+    { date: '2025-03-29', time: '15:30', airport: 'SFO', lowTickets: false },
+    { date: '2025-03-29', time: '18:00', airport: 'SFO', lowTickets: false }
 ];

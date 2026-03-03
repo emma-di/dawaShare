@@ -1037,11 +1037,24 @@ select:focus {
 }
 
 .contact-btn.phone-btn {
+    border: none;
+    cursor: pointer;
     background: var(--cardinal-light);
 }
 
 .contact-btn.phone-btn:hover {
     background: var(--cardinal);
+}
+
+.contact-btn.phone-btn-revealed {
+    background: #e8c8c8;
+    color: #333;
+    font-weight: 400;
+    font-family: inherit;
+}
+
+.contact-btn.phone-btn-revealed:hover {
+    background: #dbb8b8;
 }
 
 @media (max-width: 768px) {
