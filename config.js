@@ -50,7 +50,7 @@ const AIRLINES = [
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz3tCsxyBNcBZZA2JfEKE71Am54hSCoak2rFQqy3_x5tCEf1MbV9z9wrHu2xou1XO2o/exec';
 
 // Shuttle ticket purchase URL
-const SHUTTLE_TICKET_URL = 'https://events.humanitix.com/2025-winter-shuttles';
+const SHUTTLE_TICKET_URL = 'https://events.humanitix.com/usd5-airport-shuttles-spring-break';
 
 // ===== SHUTTLE CONFIGURATION =====
 // Outbound shuttles (Departures from Stanford to Airport)
