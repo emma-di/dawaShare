@@ -926,15 +926,27 @@ function displayRides(rides) {
         
         // If dates are equal, compare times
         if (timeA && timeB) {
-            // Extract hours from ISO format
-            const getHours = (timeStr) => {
+            const getMinutes = (timeStr) => {
                 const str = String(timeStr).trim();
+                // ISO format with T
                 if (str.includes('T')) {
-                    return parseInt(str.split('T')[1].split(':')[0]);
+                    const timePart = str.split('T')[1];
+                    const [h, m] = timePart.split(':').map(Number);
+                    return (h || 0) * 60 + (m || 0);
                 }
-                return 0;
+                // 12-hour format: "5:00 PM" or "11:30 AM"
+                if (str.includes('AM') || str.includes('PM')) {
+                    const isPM = str.includes('PM');
+                    const [h, m] = str.replace(/AM|PM/g, '').trim().split(':').map(Number);
+                    let hours = h % 12;
+                    if (isPM) hours += 12;
+                    return hours * 60 + (m || 0);
+                }
+                // Plain HH:MM (24-hour)
+                const [h, m] = str.split(':').map(Number);
+                return (h || 0) * 60 + (m || 0);
             };
-            return getHours(timeA) - getHours(timeB);
+            return getMinutes(timeA) - getMinutes(timeB);
         }
         
         return 0;
@@ -1264,11 +1276,11 @@ function displayRides(rides) {
             html += `
                 <div class="ride-card">
                     <div class="card-header">
-                        <div class="date-time">
+                        <div class="date-time" style="white-space: nowrap; flex-shrink: 0;">
                             <span class="date-large">${formatDate(date)}</span>
                             <span class="time-large">${formattedTime}</span>
                         </div>
-                        <div class="rider-name-small">${ride['First Name']} ${ride['Last Name']}</div>
+                        <div class="rider-name-small" style="word-break: break-word; overflow-wrap: break-word; text-align: right; min-width: 0;">${ride['First Name']} ${ride['Last Name']}</div>
                     </div>
                     
                     <div class="card-info">

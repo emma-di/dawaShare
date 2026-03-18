@@ -55,15 +55,15 @@ const SHUTTLE_TICKET_URL = 'https://events.humanitix.com/usd5-airport-shuttles-s
 // ===== SHUTTLE CONFIGURATION =====
 // Outbound shuttles (Departures from Stanford to Airport)
 const DEPARTURE_SHUTTLES = [
-    { date: '2026-03-18', time: '19:45', airport: 'SFO', lowTickets: false },
-    { date: '2026-03-19', time: '17:30', airport: 'SFO', lowTickets: false },
+    { date: '2026-03-18', time: '19:45', airport: 'SFO', lowTickets: true },
+    { date: '2026-03-19', time: '17:30', airport: 'SFO', lowTickets: true },
     { date: '2026-03-20', time: '05:30', airport: 'SFO', lowTickets: false },
     { date: '2026-03-20', time: '08:00', airport: 'SFO', lowTickets: false },
     { date: '2026-03-20', time: '11:30', airport: 'SFO', lowTickets: false },
-    { date: '2026-03-20', time: '19:30', airport: 'SFO', lowTickets: false },
+    { date: '2026-03-20', time: '19:30', airport: 'SFO', lowTickets: false, soldOut: true },
     { date: '2026-03-21', time: '03:30', airport: 'SFO', lowTickets: false },
-    { date: '2026-03-21', time: '05:45', airport: 'SFO', lowTickets: false },
-    { date: '2026-03-21', time: '10:00', airport: 'SFO', lowTickets: false }
+    { date: '2026-03-21', time: '05:45', airport: 'SFO', lowTickets: true },
+    { date: '2026-03-21', time: '10:00', airport: 'SFO', lowTickets: true }
 ];
 
 // Return shuttles (Arrivals from Airport to Stanford)
@@ -72,6 +72,6 @@ const ARRIVAL_SHUTTLES = [
     { date: '2026-03-28', time: '20:30', airport: 'SFO', lowTickets: false },
     { date: '2026-03-29', time: '10:30', airport: 'SFO', lowTickets: false },
     { date: '2026-03-29', time: '13:30', airport: 'SFO', lowTickets: false },
-    { date: '2026-03-29', time: '15:30', airport: 'SFO', lowTickets: false },
+    { date: '2026-03-29', time: '15:30', airport: 'SFO', lowTickets: true },
     { date: '2026-03-29', time: '18:00', airport: 'SFO', lowTickets: false }
 ];
