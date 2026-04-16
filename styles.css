@@ -1364,3 +1364,506 @@ select:focus {
     text-align: center;
     font-style: italic;
 }
+
+/* ============================================
+   DAWASHARE — HOME SCREEN STYLES
+   Paste at the bottom of your existing styles.css
+   ============================================ */
+
+/* ----- Home Screen Layout ----- */
+#homeScreen {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: var(--bg-color, #f9f9f6);
+    font-family: 'Outfit', sans-serif;
+}
+
+.home-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.07);
+    background: white;
+}
+
+.home-header .logo-icon {
+    font-size: 1.6rem;
+}
+
+.home-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: #1a1a1a;
+}
+
+/* ----- Tab Content Areas ----- */
+.home-tab-content {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px;
+    padding-bottom: 90px; /* room for bottom tab bar */
+}
+
+.home-tab-content.active {
+    display: flex;
+}
+
+/* ----- Bottom Tab Bar ----- */
+.home-bottom-tabs {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    z-index: 100;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+}
+
+.home-tab-btn {
+    flex: 1;
+    padding: 14px 0 18px;
+    border: none;
+    background: none;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.home-tab-btn.active {
+    color: #2d6a4f;
+    font-weight: 600;
+}
+
+/* ----- Empty State ----- */
+.empty-shares {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 60px 20px;
+    text-align: center;
+    gap: 8px;
+}
+
+.empty-shares .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 8px;
+}
+
+.empty-shares .empty-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.empty-shares .empty-sub {
+    font-size: 0.9rem;
+    color: #888;
+    margin: 0;
+    max-width: 260px;
+    line-height: 1.4;
+}
+
+/* ----- Group Cards ----- */
+#mySharesList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+}
+
+.group-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: white;
+    border-radius: 14px;
+    padding: 16px;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: 1px solid rgba(0,0,0,0.06);
+}
+
+.group-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.group-card:active {
+    transform: scale(0.98);
+}
+
+.group-card-icon {
+    font-size: 1.8rem;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f7f4;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.group-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.group-card-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.group-card-code {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 2px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.05em;
+}
+
+.group-card-arrow {
+    font-size: 1.4rem;
+    color: #ccc;
+    flex-shrink: 0;
+}
+
+/* ----- Join Button ----- */
+.join-btn {
+    margin-top: auto;
+    padding: 15px;
+    background: #2d6a4f;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    width: 100%;
+}
+
+.join-btn:hover {
+    background: #245c43;
+}
+
+.join-btn:active {
+    transform: scale(0.98);
+}
+
+/* ----- Create Tab ----- */
+.create-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 12px;
+}
+
+.create-option-btn {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: white;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 14px;
+    padding: 18px 16px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.create-option-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.create-option-btn:active {
+    transform: scale(0.98);
+}
+
+.create-option-icon {
+    font-size: 1.8rem;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f7f4;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.create-option-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    font-family: 'Outfit', sans-serif;
+    margin-bottom: 3px;
+}
+
+.create-option-sub {
+    font-size: 0.82rem;
+    color: #888;
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.3;
+}
+
+/* ----- Small Modals (join, create, reveal) ----- */
+.modal-content-sm {
+    max-width: 380px;
+    width: 92%;
+    border-radius: 20px;
+}
+
+.modal-label {
+    font-size: 0.9rem;
+    color: #555;
+    margin: 0 0 10px;
+    font-weight: 500;
+}
+
+.code-input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+    margin-bottom: 8px;
+}
+
+.code-input:focus {
+    border-color: #2d6a4f;
+}
+
+.error-text {
+    color: #e05050;
+    font-size: 0.85rem;
+    min-height: 20px;
+    margin: 0 0 12px;
+}
+
+.btn-primary.full-width,
+.btn-secondary.full-width {
+    width: 100%;
+    margin-top: 8px;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 1rem;
+}
+
+/* ----- Code Reveal Modal ----- */
+.reveal-group-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #555;
+    margin: 0 0 6px;
+}
+
+.reveal-label {
+    font-size: 0.9rem;
+    color: #888;
+    margin: 0 0 14px;
+}
+
+.reveal-code {
+    font-size: 2.2rem;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: 0.18em;
+    color: #2d6a4f;
+    background: #f0f7f4;
+    border-radius: 14px;
+    padding: 18px 24px;
+    margin: 0 auto 16px;
+    display: inline-block;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ----- Ride Board Header (back button + group name) ----- */
+.back-btn {
+    background: none;
+    border: none;
+    font-size: 0.95rem;
+    color: #2d6a4f;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 0;
+    flex-shrink: 0;
+}
+
+.back-btn:hover {
+    opacity: 0.75;
+}
+
+.group-name-header {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.group-code-header {
+    font-size: 0.75rem;
+    color: #aaa;
+    text-align: center;
+    letter-spacing: 0.08em;
+    font-family: 'DM Mono', monospace;
+}
+
+/* ===== NEW: Grid classes for separated shuttle/individual sections ===== */
+.shuttle-grid,
+.individuals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 14px;
+    margin-top: 12px;
+    margin-bottom: 24px;
+}
+
+.section-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--cardinal);
+    margin: 24px 0 4px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.shuttle-card {
+    background: linear-gradient(135deg, #FFE5E5 0%, #FFD0D0 100%);
+    border: 2px solid #FF8A80 !important;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.badge-available { background: #e8f5e9; color: #2E7D32; }
+.badge-low       { background: #fff3e0; color: #e65100; }
+.badge-soldout   { background: #e8e8e8; color: #666; }
+
+.contact-btn-disabled {
+    flex: 1;
+    padding: 10px 12px;
+    background: #ccc;
+    color: #666;
+    text-align: center;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-block;
+    cursor: not-allowed;
+}
+
+/* ===== Airport Autocomplete ===== */
+.airport-suggestions-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid var(--cardinal);
+    border-radius: 8px;
+    z-index: 200;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.airport-suggestion {
+    padding: 10px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.airport-suggestion:hover {
+    background: #f4f4f4;
+}
+
+.selected-airports {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.airport-tag {
+    background: #f0f7f4;
+    border: 1px solid #2d6a4f;
+    color: #2d6a4f;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.airport-tag button {
+    background: none;
+    border: none;
+    color: #2d6a4f;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    line-height: 1;
+}
+
+/* ===== Expiry Notice ===== */
+.reveal-expiry {
+    font-size: 0.78rem;
+    color: #aaa;
+    margin: 0 0 16px;
+    line-height: 1.4;
+}
+
+.group-code-header:hover {
+    color: #2d6a4f;
+    text-decoration: underline dotted;
+}

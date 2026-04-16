@@ -1,3 +1,6 @@
+const SUPABASE_URL = 'https://esglyomkonrkaizrnsrk.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzZ2x5b21rb25ya2FpenJuc3JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNjc1OTcsImV4cCI6MjA5MTk0MzU5N30.dT0erlbwijV9Nyc2gnBcf7ZXyVymew9eNxa5BdzwAGY';
+
 // ===== DROPDOWN CONFIGURATION =====
 // Update these arrays with your real values
 // This file is separate so it won't get overwritten when updating other functionality
@@ -75,3 +78,5 @@ const ARRIVAL_SHUTTLES = [
     { date: '2026-03-29', time: '15:30', airport: 'SFO', lowTickets: true },
     { date: '2026-03-29', time: '18:00', airport: 'SFO', lowTickets: false }
 ];
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

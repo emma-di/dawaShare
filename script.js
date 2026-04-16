@@ -1,51 +1,134 @@
 // ===== POPULATE DROPDOWNS =====
+// Now group-aware: Stanford uses config arrays, generic uses group's custom data
 function populateDropdowns() {
-    // Populate Location dropdown
+    const group = window.currentGroup || {};
+    const isStanford = group.type === 'stanford';
+
+    // Locations
     const locationSelect = document.getElementById('location');
-    // Keep the first "Select location..." option, remove the rest
-    while (locationSelect.options.length > 1) {
-        locationSelect.remove(1);
-    }
-    LOCATIONS.forEach(location => {
-        const option = document.createElement('option');
-        option.value = location;
-        option.textContent = location;
-        locationSelect.appendChild(option);
+    while (locationSelect.options.length > 1) locationSelect.remove(1);
+    const locs = isStanford ? LOCATIONS : (group.custom_locations || []);
+    locs.forEach(loc => {
+        const opt = document.createElement('option');
+        opt.value = loc; opt.textContent = loc;
+        locationSelect.appendChild(opt);
     });
 
-    // Populate Airport dropdowns
-    const airportSelects = ['depAirport', 'arrAirport'];
-    airportSelects.forEach(selectId => {
-        const select = document.getElementById(selectId);
-        // Keep the first "Select airport..." option, remove the rest
-        while (select.options.length > 1) {
-            select.remove(1);
+    // Airports
+    ['depAirport', 'arrAirport'].forEach(id => {
+        const sel = document.getElementById(id);
+        const isStanford = group.type === 'stanford';
+        const airports = isStanford ? AIRPORTS : (group.custom_airports || []);
+
+        if (airports.length > 0) {
+            // Has airports — show dropdown as normal
+            while (sel.options.length > 1) sel.remove(1);
+            airports.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a; opt.textContent = a;
+                sel.appendChild(opt);
+            });
+        } else {
+            // Only replace if it's still a select (not already replaced)
+            if (sel.tagName !== 'SELECT') return;
+
+            // No airports configured — swap to free text input with autocomplete
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'relative';
+            wrapper.style.width = '100%';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = id;
+            input.name = id;
+            input.placeholder = 'e.g. LAX, JFK, Heathrow...';
+            if (sel.hasAttribute('required')) input.setAttribute('required', '');
+
+            const suggBox = document.createElement('div');
+            suggBox.className = 'airport-suggestions-list';
+            suggBox.style.display = 'none';
+
+            wrapper.appendChild(input);
+            wrapper.appendChild(suggBox);
+            sel.replaceWith(wrapper);
+
+            // Wire up autocomplete
+            input.addEventListener('input', () => {
+                const query = input.value.toLowerCase();
+                suggBox.innerHTML = '';
+                if (query.length < 2) { suggBox.style.display = 'none'; return; }
+
+                if (airportData.length === 0) {
+                    suggBox.innerHTML = '<div class="airport-suggestion">Loading airports...</div>';
+                    suggBox.style.display = 'block';
+                    return;
+                }
+
+                const matches = airportData
+                    .filter(a => a.iata && (
+                        a.iata.toLowerCase().startsWith(query) ||
+                        a.name.toLowerCase().includes(query) ||
+                        a.city.toLowerCase().includes(query)
+                    ))
+                    .slice(0, 6);
+
+                if (matches.length === 0) { suggBox.style.display = 'none'; return; }
+
+                matches.forEach(airport => {
+                    const item = document.createElement('div');
+                    item.className = 'airport-suggestion';
+                    item.textContent = `${airport.iata} — ${airport.city}`;
+                    item.addEventListener('mousedown', (e) => {
+                        e.preventDefault(); // prevent blur before click
+                        input.value = `${airport.iata} — ${airport.city}`;
+                        suggBox.style.display = 'none';
+                    });
+                    suggBox.appendChild(item);
+                });
+                suggBox.style.display = 'block';
+            });
+
+            input.addEventListener('blur', () => {
+                setTimeout(() => suggBox.style.display = 'none', 150);
+            });
         }
-        
-        AIRPORTS.forEach(airport => {
-            const option = document.createElement('option');
-            option.value = airport;
-            option.textContent = airport;
-            select.appendChild(option);
+    });
+    
+    // Airlines (same for all group types)
+    ['depAirline', 'arrAirline'].forEach(id => {
+        const sel = document.getElementById(id);
+        while (sel.options.length > 1) sel.remove(1);
+        AIRLINES.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = a; opt.textContent = a;
+            sel.appendChild(opt);
         });
     });
 
-    // Populate Airline dropdowns
-    const airlineSelects = ['depAirline', 'arrAirline'];
-    airlineSelects.forEach(selectId => {
-        const select = document.getElementById(selectId);
-        // Keep the first "Select airline..." option, remove the rest
-        while (select.options.length > 1) {
-            select.remove(1);
-        }
-        
-        AIRLINES.forEach(airline => {
-            const option = document.createElement('option');
-            option.value = airline;
-            option.textContent = airline;
-            select.appendChild(option);
-        });
-    });
+    // Hide location row for generic groups
+    const locationRow = document.getElementById('location').closest('.form-row');
+    if (locationRow) locationRow.style.display = isStanford ? '' : 'none';
+}
+
+// ===== NORMALIZE SUPABASE RIDE TO DISPLAY FORMAT =====
+// Keeps all display/filter logic unchanged by mapping snake_case → old column names
+function normalizeRide(ride) {
+    return {
+        'First Name':    ride.first_name,
+        'Last Name':     ride.last_name,
+        'Email':         ride.email,
+        'Phone':         ride.phone,
+        'Location':      ride.location,
+        'Location Other': ride.location_other,
+        'Dep Date':      ride.dep_date,
+        'Dep Time':      ride.dep_time,
+        'Dep Airport':   ride.dep_airport,
+        'Dep Airline':   ride.dep_airline,
+        'Arr Date':      ride.arr_date,
+        'Arr Time':      ride.arr_time,
+        'Arr Airport':   ride.arr_airport,
+        'Arr Airline':   ride.arr_airline,
+    };
 }
 
 // ===== MODAL FUNCTIONALITY =====
@@ -59,56 +142,36 @@ const rideForm = document.getElementById('rideForm');
 const firstNameInput = document.getElementById('firstName');
 const lastNameInput = document.getElementById('lastName');
 
-// Capitalize first letter when user leaves the field
 function capitalizeName(input) {
     if (input.value) {
-        // Trim leading/trailing spaces and collapse multiple spaces
         const trimmed = input.value.trim().replace(/\s+/g, ' ');
-        
-        // Split by spaces to handle multiple words
         const words = trimmed.split(' ');
-        const capitalizedWords = words.map(word => {
-            if (word.length > 0) {
-                return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-            }
-            return word;
-        });
-        input.value = capitalizedWords.join(' ');
+        input.value = words.map(w => w.length > 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w).join(' ');
     }
 }
 
-firstNameInput.addEventListener('blur', function() {
-    capitalizeName(this);
-});
-
-lastNameInput.addEventListener('blur', function() {
-    capitalizeName(this);
-});
+firstNameInput.addEventListener('blur', function() { capitalizeName(this); });
+lastNameInput.addEventListener('blur', function() { capitalizeName(this); });
 
 // ===== TAB FUNCTIONALITY =====
-let currentTab = 'departures'; // Track which tab is active
-let allRidesData = []; // Store all rides data (cached)
+let currentTab = 'departures';
+let allRidesData = [];
 let filters = {
     dates: [],
     airport: '',
-    timeMin: 0,      // Minutes from midnight (0-1440)
-    timeMax: 1440,   // Minutes from midnight (0-1440, where 1440 = next midnight)
+    timeMin: 0,
+    timeMax: 1440,
     locations: [],
-    types: [] // 'shuttle' or 'individual'
+    types: []
 };
 
 const tabButtons = document.querySelectorAll('.tab-btn');
 tabButtons.forEach(button => {
     button.addEventListener('click', () => {
-        // Remove active class from all tabs
         tabButtons.forEach(btn => btn.classList.remove('active'));
-        // Add active class to clicked tab
         button.classList.add('active');
-        // Update current tab
         currentTab = button.getAttribute('data-tab');
-        // Reset filters when switching tabs
         resetFilters();
-        // Reload rides with new filter (uses cached data, no fetch)
         displayRides(allRidesData);
     });
 });
@@ -124,118 +187,64 @@ const locationFilterPanel = document.getElementById('locationFilterPanel');
 const typeFilterBtn = document.getElementById('typeFilterBtn');
 const typeFilterPanel = document.getElementById('typeFilterPanel');
 
-// Toggle dropdown panels
 dateFilterBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const isActive = dateFilterBtn.classList.contains('active');
-    // Close all dropdowns
     closeAllDropdowns();
-    // Toggle this one
-    if (!isActive) {
-        dateFilterBtn.classList.add('active');
-        dateFilterPanel.classList.add('active');
-    }
+    if (!isActive) { dateFilterBtn.classList.add('active'); dateFilterPanel.classList.add('active'); }
 });
 
 timeFilterBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const isActive = timeFilterBtn.classList.contains('active');
     closeAllDropdowns();
-    if (!isActive) {
-        timeFilterBtn.classList.add('active');
-        timeFilterPanel.classList.add('active');
-    }
+    if (!isActive) { timeFilterBtn.classList.add('active'); timeFilterPanel.classList.add('active'); }
 });
 
 locationFilterBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const isActive = locationFilterBtn.classList.contains('active');
     closeAllDropdowns();
-    if (!isActive) {
-        locationFilterBtn.classList.add('active');
-        locationFilterPanel.classList.add('active');
-    }
+    if (!isActive) { locationFilterBtn.classList.add('active'); locationFilterPanel.classList.add('active'); }
 });
 
 typeFilterBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const isActive = typeFilterBtn.classList.contains('active');
     closeAllDropdowns();
-    if (!isActive) {
-        typeFilterBtn.classList.add('active');
-        typeFilterPanel.classList.add('active');
-    }
+    if (!isActive) { typeFilterBtn.classList.add('active'); typeFilterPanel.classList.add('active'); }
 });
 
-// Prevent dropdown from closing when clicking inside
-dateFilterPanel.addEventListener('click', (e) => {
-    e.stopPropagation();
+[dateFilterPanel, timeFilterPanel, locationFilterPanel, typeFilterPanel].forEach(panel => {
+    panel.addEventListener('click', e => e.stopPropagation());
 });
 
-timeFilterPanel.addEventListener('click', (e) => {
-    e.stopPropagation();
-});
-
-locationFilterPanel.addEventListener('click', (e) => {
-    e.stopPropagation();
-});
-
-typeFilterPanel.addEventListener('click', (e) => {
-    e.stopPropagation();
-});
-
-// Close all dropdowns helper
 function closeAllDropdowns() {
-    dateFilterPanel.classList.remove('active');
-    dateFilterBtn.classList.remove('active');
-    timeFilterPanel.classList.remove('active');
-    timeFilterBtn.classList.remove('active');
-    locationFilterPanel.classList.remove('active');
-    locationFilterBtn.classList.remove('active');
-    typeFilterPanel.classList.remove('active');
-    typeFilterBtn.classList.remove('active');
+    [dateFilterPanel, timeFilterPanel, locationFilterPanel, typeFilterPanel].forEach(p => p.classList.remove('active'));
+    [dateFilterBtn, timeFilterBtn, locationFilterBtn, typeFilterBtn].forEach(b => b.classList.remove('active'));
 }
 
-// Close dropdowns when clicking outside
 document.addEventListener('click', closeAllDropdowns);
 
 // Done buttons
-document.getElementById('doneDateBtn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    closeAllDropdowns();
-});
+document.getElementById('doneDateBtn').addEventListener('click', (e) => { e.stopPropagation(); closeAllDropdowns(); });
+document.getElementById('doneTimeBtn').addEventListener('click', (e) => { e.stopPropagation(); updateTimeDisplay(); closeAllDropdowns(); });
+document.getElementById('doneLocationBtn').addEventListener('click', (e) => { e.stopPropagation(); closeAllDropdowns(); });
+document.getElementById('doneTypeBtn').addEventListener('click', (e) => { e.stopPropagation(); closeAllDropdowns(); });
 
-document.getElementById('doneTimeBtn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    updateTimeDisplay();
-    closeAllDropdowns();
-});
-
-document.getElementById('doneLocationBtn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    closeAllDropdowns();
-});
-
-document.getElementById('doneTypeBtn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    closeAllDropdowns();
-});
-
-// Clear All buttons
+// Clear buttons
 document.getElementById('clearDateBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     filters.dates = [];
     updateFilterButtonText('dateFilterBtn', [], 'All Dates');
     displayRides(allRidesData);
-    // Re-populate date checkboxes without affecting other filters
     populateDateFilter(allRidesData);
 });
 
 document.getElementById('clearTimeBtn').addEventListener('click', (e) => {
     e.stopPropagation();
-    filters.timeMin = 0;
-    filters.timeMax = 1440;
-    updateTimeSlider(); // This calls updateTimeDisplay() which updates the button text
+    filters.timeMin = 0; filters.timeMax = 1440;
+    updateTimeSlider();
     displayRides(allRidesData);
 });
 
@@ -244,7 +253,6 @@ document.getElementById('clearLocationBtn').addEventListener('click', (e) => {
     filters.locations = [];
     updateFilterButtonText('locationFilterBtn', [], 'All Locations');
     displayRides(allRidesData);
-    // Re-populate location checkboxes without affecting other filters
     populateLocationFilter(allRidesData);
 });
 
@@ -253,38 +261,27 @@ document.getElementById('clearTypeBtn').addEventListener('click', (e) => {
     filters.types = [];
     updateFilterButtonText('typeFilterBtn', [], 'All Types');
     displayRides(allRidesData);
-    // Uncheck all type checkboxes
-    document.querySelectorAll('#typeFilterOptions input[type="checkbox"]').forEach(cb => {
-        cb.checked = false;
-    });
+    document.querySelectorAll('#typeFilterOptions input[type="checkbox"]').forEach(cb => cb.checked = false);
 });
 
-// Type filter checkboxes
 document.querySelectorAll('#typeFilterOptions input[type="checkbox"]').forEach(checkbox => {
     checkbox.addEventListener('change', (e) => {
         const type = e.target.value;
-        if (e.target.checked) {
-            filters.types.push(type);
-        } else {
-            filters.types = filters.types.filter(t => t !== type);
-        }
+        if (e.target.checked) { filters.types.push(type); }
+        else { filters.types = filters.types.filter(t => t !== type); }
         updateFilterButtonText('typeFilterBtn', filters.types, 'All Types');
         displayRides(allRidesData);
     });
 });
 
-// ===== TIME SLIDER FUNCTIONALITY =====
+// ===== TIME SLIDER =====
 const timeSliderMin = document.getElementById('timeSliderMin');
 const timeSliderMax = document.getElementById('timeSliderMax');
 const timeRangeDisplay = document.getElementById('timeRangeDisplay');
 const timeSliderRange = document.getElementById('timeSliderRange');
 
-// Convert minutes from midnight to time string (e.g., 0 -> "12:00 AM", 750 -> "12:30 PM", 1440 -> "12:00 AM")
 function minutesToTimeString(minutes) {
-    // Handle 1440 (next midnight) as 12:00 AM
-    if (minutes === 1440) {
-        return "12:00 AM";
-    }
+    if (minutes === 1440) return "12:00 AM";
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     const period = hours >= 12 ? 'PM' : 'AM';
@@ -292,35 +289,24 @@ function minutesToTimeString(minutes) {
     return `${displayHours}:${String(mins).padStart(2, '0')} ${period}`;
 }
 
-// Update the visual slider range
 function updateSliderRange() {
     const min = parseInt(timeSliderMin.value);
     const max = parseInt(timeSliderMax.value);
     const percent = (val) => (val / 1440) * 100;
-    
     timeSliderRange.style.left = percent(min) + '%';
     timeSliderRange.style.width = (percent(max) - percent(min)) + '%';
 }
 
-// Update the time display and filter button
 function updateTimeDisplay() {
     const min = parseInt(timeSliderMin.value);
     const max = parseInt(timeSliderMax.value);
-    
     const minTime = minutesToTimeString(min);
     const maxTime = minutesToTimeString(max);
-    
     timeRangeDisplay.textContent = `${minTime} - ${maxTime}`;
-    
-    // Update button text
-    if (min === 0 && max === 1440) {
-        document.getElementById('timeFilterBtn').childNodes[0].textContent = 'All Times ';
-    } else {
-        document.getElementById('timeFilterBtn').childNodes[0].textContent = `${minTime} - ${maxTime} `;
-    }
+    document.getElementById('timeFilterBtn').childNodes[0].textContent =
+        (min === 0 && max === 1440) ? 'All Times ' : `${minTime} - ${maxTime} `;
 }
 
-// Update both visual and filters
 function updateTimeSlider() {
     timeSliderMin.value = filters.timeMin;
     timeSliderMax.value = filters.timeMax;
@@ -328,75 +314,34 @@ function updateTimeSlider() {
     updateTimeDisplay();
 }
 
-// Handle slider changes
 timeSliderMin.addEventListener('input', function() {
-    const min = parseInt(this.value);
-    const max = parseInt(timeSliderMax.value);
-    
-    // Prevent min from exceeding max
-    if (min > max) {
-        this.value = max;
-        filters.timeMin = max;
-    } else {
-        filters.timeMin = min;
-    }
-    
-    updateSliderRange();
-    updateTimeDisplay();
+    const min = parseInt(this.value), max = parseInt(timeSliderMax.value);
+    if (min > max) { this.value = max; filters.timeMin = max; } else { filters.timeMin = min; }
+    updateSliderRange(); updateTimeDisplay();
 });
 
 timeSliderMax.addEventListener('input', function() {
-    const min = parseInt(timeSliderMin.value);
-    const max = parseInt(this.value);
-    
-    // Prevent max from going below min
-    if (max < min) {
-        this.value = min;
-        filters.timeMax = min;
-    } else {
-        filters.timeMax = max;
-    }
-    
-    updateSliderRange();
-    updateTimeDisplay();
+    const min = parseInt(timeSliderMin.value), max = parseInt(this.value);
+    if (max < min) { this.value = min; filters.timeMax = min; } else { filters.timeMax = max; }
+    updateSliderRange(); updateTimeDisplay();
 });
 
-// Apply filter when user releases the slider (mouseup/touchend)
-timeSliderMin.addEventListener('change', () => {
-    displayRides(allRidesData);
-});
+timeSliderMin.addEventListener('change', () => displayRides(allRidesData));
+timeSliderMax.addEventListener('change', () => displayRides(allRidesData));
 
-timeSliderMax.addEventListener('change', () => {
-    displayRides(allRidesData);
-});
-
-// Airport filter (single select)
-filterAirport.addEventListener('change', (e) => {
-    filters.airport = e.target.value;
-    displayRides(allRidesData);
-});
-
-// Master Clear All Filters button
-document.getElementById('clearAllFiltersBtn').addEventListener('click', () => {
-    resetFilters();
-});
+filterAirport.addEventListener('change', (e) => { filters.airport = e.target.value; displayRides(allRidesData); });
+document.getElementById('clearAllFiltersBtn').addEventListener('click', () => resetFilters());
 
 function updateFilterButtonText(buttonId, filterArray, allText) {
     const button = document.getElementById(buttonId);
     if (filterArray.length === 0) {
         button.childNodes[0].textContent = allText + ' ';
     } else if (filterArray.length === 1) {
-        // Format the single item based on which filter it is
         let displayText = filterArray[0];
-        if (buttonId === 'dateFilterBtn') {
-            displayText = formatDate(filterArray[0]);
-        } else if (buttonId === 'typeFilterBtn') {
-            // Format type filter display text
-            if (filterArray[0] === 'shuttle') {
-                displayText = 'Shuttles Only';
-            } else if (filterArray[0] === 'individual') {
-                displayText = 'Individuals Only';
-            }
+        if (buttonId === 'dateFilterBtn') displayText = formatDate(filterArray[0]);
+        else if (buttonId === 'typeFilterBtn') {
+            if (filterArray[0] === 'shuttle') displayText = 'Shuttles Only';
+            else if (filterArray[0] === 'individual') displayText = 'Individuals Only';
         }
         button.childNodes[0].textContent = displayText + ' ';
     } else {
@@ -410,11 +355,7 @@ function resetFilters() {
     updateFilterButtonText('dateFilterBtn', [], 'All Dates');
     updateFilterButtonText('locationFilterBtn', [], 'All Locations');
     updateFilterButtonText('typeFilterBtn', [], 'All Types');
-    // Uncheck all type checkboxes
-    document.querySelectorAll('#typeFilterOptions input[type="checkbox"]').forEach(cb => {
-        cb.checked = false;
-    });
-    // Reset time slider (this also updates the button text via updateTimeDisplay)
+    document.querySelectorAll('#typeFilterOptions input[type="checkbox"]').forEach(cb => cb.checked = false);
     updateTimeSlider();
     populateFilterDropdowns(allRidesData);
     displayRides(allRidesData);
@@ -427,867 +368,445 @@ function populateFilterDropdowns(rides) {
 }
 
 function populateDateFilter(rides) {
-    // Filter rides based on current tab first
-    const tabFilteredRides = rides.filter(ride => {
-        if (currentTab === 'departures') {
-            return ride['Dep Date'] && ride['Dep Airport'];
-        } else {
-            return ride['Arr Date'] && ride['Arr Airport'];
-        }
-    });
-    
+    const tabRides = rides.filter(ride =>
+        currentTab === 'departures' ? (ride['Dep Date'] && ride['Dep Airport']) : (ride['Arr Date'] && ride['Arr Airport'])
+    );
     const dates = new Set();
-    tabFilteredRides.forEach(ride => {
+    tabRides.forEach(ride => {
         const date = currentTab === 'departures' ? ride['Dep Date'] : ride['Arr Date'];
-        if (date) {
-            // Normalize date to YYYY-MM-DD format (remove time portion if present)
-            const normalizedDate = date.split('T')[0];
-            console.log('Adding date to filter options:', date, '→', normalizedDate);
-            dates.add(normalizedDate);
-        }
+        if (date) dates.add(date.split('T')[0]);
     });
-    
-    // Add shuttle dates to the set (Set automatically prevents duplicates)
-    const shuttles = currentTab === 'departures' ? DEPARTURE_SHUTTLES : ARRIVAL_SHUTTLES;
-    console.log('Adding shuttle dates for', currentTab, '- shuttle count:', shuttles.length);
-    shuttles.forEach(shuttle => {
-        // Shuttle dates are already in YYYY-MM-DD format
-        console.log('Adding shuttle date:', shuttle.date);
-        dates.add(shuttle.date);
-    });
-    
-    // Convert to array and sort chronologically
-    // Use string comparison since YYYY-MM-DD format sorts correctly alphabetically
-    // This avoids timezone conversion issues from new Date()
+
+    // Add shuttle dates only for Stanford groups
+    if (window.currentGroup && window.currentGroup.type === 'stanford') {
+        const shuttles = currentTab === 'departures' ? DEPARTURE_SHUTTLES : ARRIVAL_SHUTTLES;
+        shuttles.forEach(s => dates.add(s.date));
+    }
+
     const sortedDates = Array.from(dates).sort();
-    
-    // Populate date checkboxes
     const dateOptions = document.getElementById('dateFilterOptions');
     dateOptions.innerHTML = '';
     sortedDates.forEach(date => {
         const option = document.createElement('div');
         option.className = 'filter-option';
         const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.id = `date-${date}`;
-        checkbox.value = date;
+        checkbox.type = 'checkbox'; checkbox.id = `date-${date}`; checkbox.value = date;
         checkbox.checked = filters.dates.includes(date);
         checkbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                filters.dates.push(date);
-            } else {
-                filters.dates = filters.dates.filter(d => d !== date);
-            }
+            if (e.target.checked) filters.dates.push(date);
+            else filters.dates = filters.dates.filter(d => d !== date);
             updateFilterButtonText('dateFilterBtn', filters.dates, 'All Dates');
             displayRides(allRidesData);
         });
         const label = document.createElement('label');
-        label.htmlFor = `date-${date}`;
-        label.textContent = formatDate(date);
-        option.appendChild(checkbox);
-        option.appendChild(label);
+        label.htmlFor = `date-${date}`; label.textContent = formatDate(date);
+        option.appendChild(checkbox); option.appendChild(label);
         dateOptions.appendChild(option);
     });
 }
 
 function populateAirportFilter(rides) {
-    // Filter rides based on current tab first
-    const tabFilteredRides = rides.filter(ride => {
-        if (currentTab === 'departures') {
-            return ride['Dep Date'] && ride['Dep Airport'];
-        } else {
-            return ride['Arr Date'] && ride['Arr Airport'];
-        }
-    });
-    
+    const tabRides = rides.filter(ride =>
+        currentTab === 'departures' ? (ride['Dep Date'] && ride['Dep Airport']) : (ride['Arr Date'] && ride['Arr Airport'])
+    );
     const airports = new Set();
-    tabFilteredRides.forEach(ride => {
+    tabRides.forEach(ride => {
         const airport = currentTab === 'departures' ? ride['Dep Airport'] : ride['Arr Airport'];
-        if (airport) airports.add(airport.split(' ')[0]); // Get airport code
+        if (airport) airports.add(airport.split(' ')[0]);
     });
-    
-    // Store current selection
     const currentAirport = filterAirport.value;
-    
-    // Populate airport dropdown (single select)
     filterAirport.innerHTML = '<option value="">All Airports</option>';
     Array.from(airports).sort().forEach(airport => {
         const option = document.createElement('option');
-        option.value = airport;
-        option.textContent = airport;
+        option.value = airport; option.textContent = airport;
         filterAirport.appendChild(option);
     });
-    
-    // Restore selection if it still exists
-    if (currentAirport && Array.from(airports).includes(currentAirport)) {
-        filterAirport.value = currentAirport;
-    }
+    if (currentAirport && Array.from(airports).includes(currentAirport)) filterAirport.value = currentAirport;
 }
 
-
 function populateLocationFilter(rides) {
-    // Filter rides based on current tab first
-    const tabFilteredRides = rides.filter(ride => {
-        if (currentTab === 'departures') {
-            return ride['Dep Date'] && ride['Dep Airport'];
-        } else {
-            return ride['Arr Date'] && ride['Arr Airport'];
-        }
-    });
-    
-    // Get locations that actually have rides (with the exact values from spreadsheet)
-    const availableLocationsFromData = new Set();
-    tabFilteredRides.forEach(ride => {
-        const location = ride['Location'];
-        if (location) availableLocationsFromData.add(location);
-    });
-    
-    console.log('Locations from data:', Array.from(availableLocationsFromData));
-    
-    // Populate location checkboxes - show ALL locations from config, always enabled
+    const group = window.currentGroup || {};
+    const isStanford = group.type === 'stanford';
+    const locList = isStanford ? LOCATIONS : (group.custom_locations || []);
+
     const locationOptions = document.getElementById('locationFilterOptions');
     locationOptions.innerHTML = '';
-    LOCATIONS.forEach(configLocation => {
+    locList.forEach(configLocation => {
         const option = document.createElement('div');
         option.className = 'filter-option';
-        
         const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.id = `location-${configLocation}`;
-        checkbox.value = configLocation;
-        checkbox.checked = filters.locations.includes(configLocation);
-        // Always enabled - let users select any location
+        checkbox.type = 'checkbox'; checkbox.id = `location-${configLocation}`;
+        checkbox.value = configLocation; checkbox.checked = filters.locations.includes(configLocation);
         checkbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                filters.locations.push(configLocation);
-            } else {
-                filters.locations = filters.locations.filter(l => l !== configLocation);
-            }
+            if (e.target.checked) filters.locations.push(configLocation);
+            else filters.locations = filters.locations.filter(l => l !== configLocation);
             updateFilterButtonText('locationFilterBtn', filters.locations, 'All Locations');
             displayRides(allRidesData);
         });
         const label = document.createElement('label');
-        label.htmlFor = `location-${configLocation}`;
-        label.textContent = configLocation;
-        option.appendChild(checkbox);
-        option.appendChild(label);
+        label.htmlFor = `location-${configLocation}`; label.textContent = configLocation;
+        option.appendChild(checkbox); option.appendChild(label);
         locationOptions.appendChild(option);
     });
 }
 
-// Close modal when clicking X button
-closeBtn.addEventListener('click', () => {
-    modal.classList.remove('active');
-});
-
-// Close modal when clicking "Already submitted / Unsure rn" button
-alreadySubmittedBtn.addEventListener('click', () => {
-    modal.classList.remove('active');
-});
-
-// Open modal when clicking "Add Your Ride" button
-openFormBtn.addEventListener('click', () => {
-    modal.classList.add('active');
-});
-
-// Close modal when clicking outside the modal content
-modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-        modal.classList.remove('active');
-    }
-});
-
-// Close modal with Escape key
+// ===== MODAL OPEN/CLOSE =====
+closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+alreadySubmittedBtn.addEventListener('click', () => modal.classList.remove('active'));
+openFormBtn.addEventListener('click', () => modal.classList.add('active'));
+modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal.classList.contains('active')) {
-        modal.classList.remove('active');
-    }
+    if (e.key === 'Escape' && modal.classList.contains('active')) modal.classList.remove('active');
 });
 
 // ===== SKIP SECTION FUNCTIONALITY =====
-const skipButtons = document.querySelectorAll('.skip-section-btn');
-
-skipButtons.forEach(button => {
+document.querySelectorAll('.skip-section-btn').forEach(button => {
     button.addEventListener('click', () => {
         const sectionType = button.getAttribute('data-section');
         const section = document.getElementById(`${sectionType}Section`);
         const isCollapsed = section.classList.contains('collapsed');
-        
+
         if (isCollapsed) {
-            // Expand the section
             section.classList.remove('collapsed');
             button.classList.remove('active');
             button.textContent = "Skip for now";
-            
-            // Make fields required again
             if (sectionType === 'departure') {
                 document.getElementById('depDate').setAttribute('required', '');
                 document.getElementById('depTime').setAttribute('required', '');
                 document.getElementById('depAirport').setAttribute('required', '');
-            } else if (sectionType === 'arrival') {
+            } else {
                 document.getElementById('arrDate').setAttribute('required', '');
                 document.getElementById('arrTime').setAttribute('required', '');
                 document.getElementById('arrAirport').setAttribute('required', '');
             }
         } else {
-            // Collapse the section
             section.classList.add('collapsed');
             button.classList.add('active');
             button.textContent = 'Skipped - Click to add info';
-            
-            // Remove required attributes and clear values
-            if (sectionType === 'departure') {
-                document.getElementById('depDate').removeAttribute('required');
-                document.getElementById('depTime').removeAttribute('required');
-                document.getElementById('depAirport').removeAttribute('required');
-                document.getElementById('depDate').value = '';
-                document.getElementById('depTime').value = '';
-                document.getElementById('depAirport').value = '';
-                document.getElementById('depAirline').value = '';
-            } else if (sectionType === 'arrival') {
-                document.getElementById('arrDate').removeAttribute('required');
-                document.getElementById('arrTime').removeAttribute('required');
-                document.getElementById('arrAirport').removeAttribute('required');
-                document.getElementById('arrDate').value = '';
-                document.getElementById('arrTime').value = '';
-                document.getElementById('arrAirport').value = '';
-                document.getElementById('arrAirline').value = '';
-            }
+            const prefix = sectionType === 'departure' ? 'dep' : 'arr';
+            ['Date', 'Time', 'Airport', 'Airline'].forEach(field => {
+                const el = document.getElementById(`${prefix}${field}`);
+                if (el) { el.removeAttribute('required'); el.value = ''; }
+            });
         }
     });
 });
 
-// ===== FORM SUBMISSION =====
+// ===== FORM SUBMISSION → SUPABASE =====
 rideForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    // Disable submit button to prevent double submissions
     const submitBtn = rideForm.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
-    
-    // Get form data
-    const formData = new FormData(rideForm);
-    const data = {};
-    formData.forEach((value, key) => {
-        data[key] = value;
-    });
-    
-    // Combine email parts into full email
-    data.email = data.emailUsername + '@stanford.edu';
-    delete data.emailUsername; // Remove the username-only field
-    
-    // Check if sections are skipped (collapsed)
-    const departureSection = document.getElementById('departureSection');
-    const arrivalSection = document.getElementById('arrivalSection');
-    
-    data.departureSkipped = departureSection.classList.contains('collapsed');
-    data.arrivalSkipped = arrivalSection.classList.contains('collapsed');
-    
-    // If section is skipped, clear its data so backend knows not to update those fields
-    if (data.departureSkipped) {
-        delete data.depDate;
-        delete data.depTime;
-        delete data.depAirport;
-        delete data.depAirline;
-    }
-    
-    if (data.arrivalSkipped) {
-        delete data.arrDate;
-        delete data.arrTime;
-        delete data.arrAirport;
-        delete data.arrAirline;
-    }
-    
+
+    const group = window.currentGroup;
+    if (!group) { alert('No group selected.'); submitBtn.disabled = false; submitBtn.textContent = originalText; return; }
+
+    const getValue = (id) => (document.getElementById(id)?.value || '').trim();
+    const depSkipped = document.getElementById('departureSection').classList.contains('collapsed');
+    const arrSkipped = document.getElementById('arrivalSection').classList.contains('collapsed');
+
+    // Build ride object for Supabase
+    const rideData = {
+        group_id:      group.id,
+        first_name:    getValue('firstName'),
+        last_name:     getValue('lastName'),
+        email:         getValue('emailUsername'),
+        phone:         getValue('phone') || null,
+        location:      getValue('location') || null,
+        location_other: getValue('locationOther') || null,
+        dep_date:      !depSkipped ? (getValue('depDate') || null) : null,
+        dep_time:      !depSkipped ? (getValue('depTime') || null) : null,
+        dep_airport:   !depSkipped ? (getValue('depAirport') || null) : null,
+        dep_airline:   !depSkipped ? (getValue('depAirline') || null) : null,
+        arr_date:      !arrSkipped ? (getValue('arrDate') || null) : null,
+        arr_time:      !arrSkipped ? (getValue('arrTime') || null) : null,
+        arr_airport:   !arrSkipped ? (getValue('arrAirport') || null) : null,
+        arr_airline:   !arrSkipped ? (getValue('arrAirline') || null) : null,
+    };
+
     try {
-        // Send data to Google Sheets
-        // Note: mode: 'no-cors' means we can't read the response, so we'll assume success
-        const fetchPromise = fetch(GOOGLE_SHEET_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
-        
-        // Don't wait forever - give it 2 seconds max, then assume success
-        const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Wait for whichever comes first: response or timeout
-        await Promise.race([fetchPromise, timeoutPromise]);
-        
-        // Success! (we assume, since no-cors doesn't let us check)
-        alert('✅ Thank you! Your ride info has been submitted successfully.');
-        
-        // Save user's info to localStorage for pre-filling emails
+        // Check if this email already has a ride in this group
+        const { data: existing } = await supabaseClient
+            .from('rides')
+            .select('id')
+            .eq('group_id', group.id)
+            .eq('email', rideData.email)
+            .single();
+
+        let error;
+        if (existing) {
+            // Update existing ride (only update non-null fields)
+            const updateData = Object.fromEntries(Object.entries(rideData).filter(([_, v]) => v !== null));
+            ({ error } = await supabaseClient.from('rides').update(updateData).eq('id', existing.id));
+        } else {
+            ({ error } = await supabaseClient.from('rides').insert(rideData));
+        }
+
+        if (error) throw error;
+
+        alert('✅ Your ride info has been submitted!');
+
+        // Save user info to localStorage for email pre-fill
         localStorage.setItem('dawaShare_userInfo', JSON.stringify({
-            firstName: data.firstName,
-            lastName: data.lastName,
-            depDate: data.depDate,
-            depTime: data.depTime,
-            depAirport: data.depAirport,
-            depAirline: data.depAirline,
-            arrDate: data.arrDate,
-            arrTime: data.arrTime,
-            arrAirport: data.arrAirport,
-            arrAirline: data.arrAirline,
-            location: data.location
+            firstName: rideData.first_name,
+            lastName:  rideData.last_name,
+            depDate:   rideData.dep_date,
+            depTime:   rideData.dep_time,
+            depAirport: rideData.dep_airport,
+            arrDate:   rideData.arr_date,
+            arrTime:   rideData.arr_time,
+            arrAirport: rideData.arr_airport,
+            location:  rideData.location,
         }));
-        
-        // Reset form and close modal
+
         rideForm.reset();
         modal.classList.remove('active');
-        
-        // Refresh the rides display (forces new fetch)
-        forceRefreshData();
-        
-    } catch (error) {
-        console.error('Error:', error);
-        alert('❌ Oops! Something went wrong. Please try again or contact support.');
+        await loadRides(); // Refresh
+
+    } catch (err) {
+        console.error('Submit error:', err);
+        alert('❌ Something went wrong. Please try again!');
     } finally {
-        // Re-enable submit button
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
     }
 });
 
-// ===== LOAD RIDES FROM GOOGLE SHEETS =====
-let isDataLoaded = false; // Track if we've loaded data yet
-
-const CACHE_KEY = 'dawaShareRides';
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
+// ===== LOAD RIDES FROM SUPABASE =====
 async function loadRides() {
-    if (isDataLoaded) {
-        displayRides(allRidesData);
-        return;
-    }
+    const group = window.currentGroup;
+    if (!group) return;
 
     const ridesTable = document.getElementById('ridesTable');
+    ridesTable.innerHTML = '<p class="loading-state">Loading rides... ⏳</p>';
 
-    // Show cached data instantly if available
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-        const { data, timestamp } = JSON.parse(cached);
-        const age = Date.now() - timestamp;
-        allRidesData = data;
-        isDataLoaded = true;
+    try {
+        const { data, error } = await supabaseClient
+            .from('rides')
+            .select('*')
+            .eq('group_id', group.id)
+            .order('dep_date', { ascending: true });
+
+        if (error) throw error;
+
+        allRidesData = (data || []).map(normalizeRide);
+        populateDropdowns();
         populateFilterDropdowns(allRidesData);
         displayRides(allRidesData);
-        // If cache is fresh enough, skip the fetch
-        if (age < CACHE_TTL) return;
-    } else {
-        ridesTable.innerHTML = '<p class="loading-state">Loading rides... ⏳</p>';
-    }
 
-    // Fetch fresh data in the background
-    try {
-        const response = await fetch(GOOGLE_SHEET_URL);
-        const result = await response.json();
-
-        if (result.result === 'success' && result.data.length > 0) {
-            allRidesData = result.data;
-            isDataLoaded = true;
-            localStorage.setItem(CACHE_KEY, JSON.stringify({ data: result.data, timestamp: Date.now() }));
-            populateFilterDropdowns(allRidesData);
-            displayRides(allRidesData);
-        } else if (!cached) {
-            ridesTable.innerHTML = '<p class="empty-state">No rides yet. Be the first to share your ride info!</p>';
-        }
-    } catch (error) {
-        console.error('Error loading rides:', error);
-        if (!cached) ridesTable.innerHTML = '<p class="empty-state">No rides yet. Be the first to share your ride info!</p>';
+    } catch (err) {
+        console.error('Error loading rides:', err);
+        ridesTable.innerHTML = '<p class="empty-state">Couldn\'t load rides. Try refreshing!</p>';
     }
 }
 
-// Force refresh data (call this after form submission)
-function forceRefreshData() {
-    isDataLoaded = false;
-    loadRides();
-}
-
-// ===== DISPLAY RIDES IN TABLE =====
+// ===== DISPLAY RIDES =====
 function displayRides(rides) {
     const ridesTable = document.getElementById('ridesTable');
-    
-    console.log('=== displayRides called ===');
-    console.log('Total rides received:', rides.length);
-    console.log('First ride data:', rides[0]);
-    
-    // Filter rides based on current tab
-    let filteredRides = rides.filter(ride => {
-        if (currentTab === 'departures') {
-            return ride['Dep Date'] && ride['Dep Airport'];
-        } else {
-            return ride['Arr Date'] && ride['Arr Airport'];
-        }
-    });
-    
-    console.log('Filtered rides for', currentTab, ':', filteredRides.length);
-    
-    // Apply additional filters
+    const group = window.currentGroup || {};
+    const isStanford = group.type === 'stanford';
+
+    // Filter by tab
+    let filteredRides = rides.filter(ride =>
+        currentTab === 'departures'
+            ? (ride['Dep Date'] && ride['Dep Airport'])
+            : (ride['Arr Date'] && ride['Arr Airport'])
+    );
+
+    // Date filter
     if (filters.dates.length > 0) {
-        console.log('DATE FILTER ACTIVE - Selected dates:', filters.dates);
         filteredRides = filteredRides.filter(ride => {
             const date = currentTab === 'departures' ? ride['Dep Date'] : ride['Arr Date'];
-            if (!date) return false;
-            
-            // Normalize date to YYYY-MM-DD format
-            // Handle both ISO strings and plain date strings
-            let normalizedDate;
-            if (date.includes('T')) {
-                // ISO format with time - split and take date part
-                normalizedDate = date.split('T')[0];
-            } else if (date.includes('-')) {
-                // Already in YYYY-MM-DD format
-                normalizedDate = date;
-            } else {
-                // Fallback: try to parse as date
-                const parsed = new Date(date);
-                normalizedDate = parsed.toISOString().split('T')[0];
-            }
-            
-            const matches = filters.dates.includes(normalizedDate);
-            console.log('Date check:', normalizedDate, 'matches filter?', matches);
-            return matches;
+            return date && filters.dates.includes(date.split('T')[0]);
         });
     }
-    
+
+    // Airport filter
     if (filters.airport) {
         filteredRides = filteredRides.filter(ride => {
             const airport = currentTab === 'departures' ? ride['Dep Airport'] : ride['Arr Airport'];
             return airport && airport.startsWith(filters.airport);
         });
     }
-    
-    // Time filter - check if time is within slider range
+
+    // Time filter
     if (filters.timeMin !== 0 || filters.timeMax !== 1440) {
         filteredRides = filteredRides.filter(ride => {
             const time = currentTab === 'departures' ? ride['Dep Time'] : ride['Arr Time'];
             if (!time) return false;
-            
             const timeStr = String(time).trim();
             let hours, minutes;
-            
-            if (timeStr.includes('T') && timeStr.includes('Z')) {
-                // UTC time - convert to local
-                const fullDate = new Date(timeStr);
-                hours = fullDate.getHours();
-                minutes = fullDate.getMinutes();
-            } else if (timeStr.includes('T')) {
-                // ISO format but not UTC
-                const timePart = timeStr.split('T')[1].split(':');
-                hours = parseInt(timePart[0]);
-                minutes = parseInt(timePart[1] || 0);
-            } else if (timeStr.includes(':')) {
+            if (timeStr.includes(':')) {
                 const parts = timeStr.split(':');
-                hours = parseInt(parts[0]);
-                minutes = parseInt(parts[1] || 0);
+                hours = parseInt(parts[0]); minutes = parseInt(parts[1] || 0);
             }
-            
             if (hours === undefined) return false;
-            
-            // Convert to minutes from midnight
             const rideMinutes = hours * 60 + minutes;
-            
             return rideMinutes >= filters.timeMin && rideMinutes <= filters.timeMax;
         });
     }
-    
+
+    // Location filter
     if (filters.locations.length > 0) {
         filteredRides = filteredRides.filter(ride => {
-            const rideLocation = ride['Location'];
-            if (!rideLocation) return false;
-            
-            // Check if any selected location matches (exact or partial match)
-            return filters.locations.some(selectedLoc => {
-                // Exact match
-                if (rideLocation === selectedLoc) return true;
-                // Partial match (case-insensitive) - handles "Toyon" vs "Toyon Hall"
-                return rideLocation.toLowerCase().includes(selectedLoc.toLowerCase()) ||
-                       selectedLoc.toLowerCase().includes(rideLocation.toLowerCase());
-            });
+            const loc = ride['Location'];
+            if (!loc) return false;
+            return filters.locations.some(sel =>
+                loc === sel || loc.toLowerCase().includes(sel.toLowerCase()) || sel.toLowerCase().includes(loc.toLowerCase())
+            );
         });
     }
-    
-    // Sort rides by date and time (earliest first)
+
+    // Sort by date/time
     filteredRides.sort((a, b) => {
         const dateA = currentTab === 'departures' ? a['Dep Date'] : a['Arr Date'];
         const dateB = currentTab === 'departures' ? b['Dep Date'] : b['Arr Date'];
         const timeA = currentTab === 'departures' ? a['Dep Time'] : a['Arr Time'];
         const timeB = currentTab === 'departures' ? b['Dep Time'] : b['Arr Time'];
-        
-        // Compare dates first
-        if (dateA !== dateB) {
-            return new Date(dateA) - new Date(dateB);
-        }
-        
-        // If dates are equal, compare times
+        if (dateA !== dateB) return new Date(dateA) - new Date(dateB);
         if (timeA && timeB) {
-            const getMinutes = (timeStr) => {
-                const str = String(timeStr).trim();
-                // ISO format with T
-                if (str.includes('T')) {
-                    const timePart = str.split('T')[1];
-                    const [h, m] = timePart.split(':').map(Number);
-                    return (h || 0) * 60 + (m || 0);
-                }
-                // 12-hour format: "5:00 PM" or "11:30 AM"
-                if (str.includes('AM') || str.includes('PM')) {
-                    const isPM = str.includes('PM');
-                    const [h, m] = str.replace(/AM|PM/g, '').trim().split(':').map(Number);
-                    let hours = h % 12;
-                    if (isPM) hours += 12;
-                    return hours * 60 + (m || 0);
-                }
-                // Plain HH:MM (24-hour)
-                const [h, m] = str.split(':').map(Number);
-                return (h || 0) * 60 + (m || 0);
-            };
-            return getMinutes(timeA) - getMinutes(timeB);
+            const toMin = t => { const [h, m] = String(t).split(':').map(Number); return h * 60 + (m || 0); };
+            return toMin(timeA) - toMin(timeB);
         }
-        
         return 0;
     });
-    
-    // ===== PREPARE SHUTTLES =====
-    let shuttles = currentTab === 'departures' ? DEPARTURE_SHUTTLES : ARRIVAL_SHUTTLES;
-    
-    // Apply filters to shuttles (NOTE: Shuttles are NOT filtered by location - they serve all locations)
-    // Type filter
-    if (filters.types.length > 0) {
-        if (!filters.types.includes('shuttle')) {
-            shuttles = [];
+
+    // Shuttles — only for Stanford groups
+    let shuttles = [];
+    if (isStanford) {
+        shuttles = currentTab === 'departures' ? [...DEPARTURE_SHUTTLES] : [...ARRIVAL_SHUTTLES];
+        if (filters.types.length > 0 && !filters.types.includes('shuttle')) shuttles = [];
+        if (filters.dates.length > 0) shuttles = shuttles.filter(s => filters.dates.includes(s.date));
+        if (filters.airport) shuttles = shuttles.filter(s => s.airport === filters.airport);
+        if (filters.timeMin !== 0 || filters.timeMax !== 1440) {
+            shuttles = shuttles.filter(s => {
+                const [h, m] = s.time.split(':').map(Number);
+                const mins = h * 60 + (m || 0);
+                return mins >= filters.timeMin && mins <= filters.timeMax;
+            });
         }
     }
-    
-    // Date filter
-    if (filters.dates.length > 0) {
-        shuttles = shuttles.filter(shuttle => filters.dates.includes(shuttle.date));
-    }
-    
-    // Airport filter
-    if (filters.airport) {
-        shuttles = shuttles.filter(shuttle => shuttle.airport === filters.airport);
-    }
-    
-    // Time filter for shuttles
-    if (filters.timeMin !== 0 || filters.timeMax !== 1440) {
-        shuttles = shuttles.filter(shuttle => {
-            const timeParts = shuttle.time.split(':');
-            const hours = parseInt(timeParts[0]);
-            const minutes = parseInt(timeParts[1] || 0);
-            const shuttleMinutes = hours * 60 + minutes;
-            
-            return shuttleMinutes >= filters.timeMin && shuttleMinutes <= filters.timeMax;
-        });
-    }
-    
-    // Filter individual rides by type filter
-    if (filters.types.length > 0 && filters.types.includes('individual') && !filters.types.includes('shuttle')) {
-        // Show only individuals, shuttles already filtered out above
-    } else if (filters.types.length > 0 && !filters.types.includes('individual')) {
-        // Only shuttles selected, remove all individual rides
-        filteredRides = [];
-    }
-    
-    // Check if we have any results
+
+    // Type filter for individual rides
+    if (filters.types.length > 0 && !filters.types.includes('individual')) filteredRides = [];
+
     if (filteredRides.length === 0 && shuttles.length === 0) {
         ridesTable.innerHTML = `<p class="empty-state">No ${currentTab} match your filters. Try adjusting your search!</p>`;
         return;
     }
-    
+
+    // ===== BUILD HTML =====
     let html = '';
-    
-    // ===== SHUTTLES SECTION =====
+
+    // --- Shuttles section ---
     if (shuttles.length > 0) {
-        html += '<div class="section-divider">';
-        html += '<h3 class="section-title">🚐 Official Shuttles</h3>';
-        html += '<p class="section-subtitle">Cheapest option - Book early!</p>';
-        html += '</div>';
+        html += `
+            <div class="section-divider">
+                <div class="section-title">🚌 Official Shuttles</div>
+                <div class="section-subtitle">Cheapest option – Book early!</div>
+            </div>
+        `;
         html += '<div class="rides-grid">';
-        
-        // Sort shuttles chronologically
-        const sortedShuttles = shuttles.slice().sort((a, b) => {
-            const dateTimeA = `${a.date}T${a.time}:00`;
-            const dateTimeB = `${b.date}T${b.time}:00`;
-            return dateTimeA.localeCompare(dateTimeB);
-        });
-        
-        sortedShuttles.forEach(shuttle => {
-            // Parse date manually to avoid timezone issues
-            const [year, month, day] = shuttle.date.split('-').map(Number);
-            const shuttleDate = new Date(year, month - 1, day);
-            
-            const formattedDate = shuttleDate.toLocaleDateString('en-US', { 
-                weekday: 'short', 
-                month: 'numeric', 
-                day: 'numeric' 
-            });
-            
-            // Format time to 12-hour format
-            const [hours24, minutes] = shuttle.time.split(':');
-            const hours = parseInt(hours24);
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            const hours12 = hours % 12 || 12;
-            const formattedTime = `${hours12}:${minutes} ${ampm}`;
-            
-            const icon = currentTab === 'departures' ? '🛫' : '🛬';
-            const airportText = `${icon} ${shuttle.airport}`;
-            
-            // Determine card classes
-            let cardClasses = 'ride-card shuttle-card';
-            if (shuttle.lowTickets) cardClasses += ' low-tickets';
-            if (shuttle.soldOut) cardClasses += ' sold-out';
-            
-            // Button text and class
-            const btnText = shuttle.soldOut ? 'Join Waitlist' : 'Buy Tickets ($5)';
-            const btnClass = shuttle.soldOut ? 'shuttle-buy-btn waitlist' : 'shuttle-buy-btn';
-            
+        shuttles.forEach(shuttle => {
+            const [h, m] = shuttle.time.split(':').map(Number);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const h12 = h % 12 || 12;
+            const formattedTime = `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+            const dateStr = formatDate(shuttle.date);
+            const cardClasses = `ride-card shuttle-card${shuttle.lowTickets ? ' low-tickets' : ''}${shuttle.soldOut ? ' sold-out' : ''}`;
             html += `
                 <div class="${cardClasses}">
                     <div class="card-header">
                         <div class="date-time">
-                            <span class="date-large">${formattedDate}</span>
+                            <span class="date-large">${dateStr}</span>
                             <span class="time-large">${formattedTime}</span>
                         </div>
                     </div>
-                    
                     <div class="card-info">
-                        <div class="card-airport-airline">${airportText}</div>
+                        <div class="card-airport-airline">✈️ ${shuttle.airport}</div>
                         <div class="card-location">🚌 Direct from campus</div>
                     </div>
-                    
                     <div class="card-actions">
-                        <a href="${SHUTTLE_TICKET_URL}" target="_blank" class="${btnClass}">${btnText}</a>
+                        ${shuttle.soldOut
+                            ? '<span class="shuttle-buy-btn waitlist">Sold Out</span>'
+                            : `<a href="${SHUTTLE_TICKET_URL}" target="_blank" class="shuttle-buy-btn">Buy Tickets ($5)</a>`
+                        }
                     </div>
-                </div>
-            `;
+                </div>`;
         });
-        
-        html += '</div>'; // Close shuttles grid
-    }
-    
-    // ===== INDIVIDUAL RIDES SECTION =====
-    if (filteredRides.length > 0) {
-        html += '<div class="section-divider">';
-        html += '<h3 class="section-title">🚗 Individual Rides</h3>';
-        html += '<p class="section-subtitle">Share costs with fellow students</p>';
         html += '</div>';
+    }
+
+    // --- Individual rides section ---
+    if (filteredRides.length > 0) {
+        html += `
+            <div class="section-divider">
+                <div class="section-title">🧑 Individual Rides</div>
+            </div>
+        `;
         html += '<div class="rides-grid">';
-        
-        // filteredRides are already sorted chronologically earlier in the function
+
+        const userInfo = JSON.parse(localStorage.getItem('dawaShare_userInfo') || 'null');
+
         filteredRides.forEach(ride => {
-            console.log('--- Processing ride ---');
-            console.log('Name:', ride['First Name'], ride['Last Name']);
-            console.log('Dep Time:', ride['Dep Time']);
-            console.log('Arr Time:', ride['Arr Time']);
-            
-            // Determine which info to show based on current tab
-            let date, time, airport, airline, icon;
-            
-            if (currentTab === 'departures') {
-                date = ride['Dep Date'];
-                time = ride['Dep Time'];
-                airport = ride['Dep Airport'];
-                airline = ride['Dep Airline'];
-                icon = '🛫';
-            } else {
-                date = ride['Arr Date'];
-                time = ride['Arr Time'];
-                airport = ride['Arr Airport'];
-                airline = ride['Arr Airline'];
-                icon = '🛬';
-            }
-            
-            // Format time to 12-hour format with AM/PM
-            let formattedTime = 'Time TBD';
+            const date = currentTab === 'departures' ? ride['Dep Date'] : ride['Arr Date'];
+            const time = currentTab === 'departures' ? ride['Dep Time'] : ride['Arr Time'];
+            const airport = currentTab === 'departures' ? ride['Dep Airport'] : ride['Arr Airport'];
+            const airline = currentTab === 'departures' ? ride['Dep Airline'] : ride['Arr Airline'];
+
+            // Format time
+            let formattedTime = 'TBD';
             if (time) {
-                console.log('Raw time value:', time, 'Type:', typeof time);
                 const timeStr = String(time).trim();
-                console.log('Time string after trim:', timeStr);
-                
-                if (timeStr && timeStr !== '' && timeStr !== 'undefined' && timeStr !== 'null') {
-                    let hours24, minutes;
-                    
-                    // Check if it's an ISO datetime format (e.g., "1899-12-30T16:00:00.000Z")
-                    if (timeStr.includes('T') && timeStr.includes(':') && timeStr.includes('Z')) {
-                        // This is a UTC time from Google Sheets - need to convert to local time
-                        const fullDate = new Date(timeStr);
-                        hours24 = fullDate.getHours(); // This gets local hours
-                        minutes = String(fullDate.getMinutes()).padStart(2, '0');
-                        console.log('Parsed from ISO UTC format - local hours24:', hours24, 'minutes:', minutes);
-                    } else if (timeStr.includes('T') && timeStr.includes(':')) {
-                        // ISO format but not UTC marked - extract time portion
-                        const timePortion = timeStr.split('T')[1].split('.')[0]; // Gets "23:00:00"
-                        const [hourStr, minuteStr] = timePortion.split(':');
-                        hours24 = parseInt(hourStr, 10);
-                        minutes = minuteStr;
-                        console.log('Parsed from ISO format - hours24:', hours24, 'minutes:', minutes);
-                    } else if (timeStr.includes(':')) {
-                        // Regular HH:MM format
-                        const [hourStr, minuteStr] = timeStr.split(':');
-                        hours24 = parseInt(hourStr, 10);
-                        minutes = minuteStr ? minuteStr.substring(0, 2) : '00';
-                        console.log('Parsed from HH:MM format - hours24:', hours24, 'minutes:', minutes);
-                    } else {
-                        // Try parsing as just a number
-                        hours24 = parseInt(timeStr, 10);
-                        minutes = '00';
-                        console.log('Parsed as number - hours24:', hours24);
-                    }
-                    
-                    console.log('Parsed hours24:', hours24, 'minutes:', minutes);
-                    
-                    if (!isNaN(hours24) && hours24 >= 0 && hours24 <= 23) {
-                        const ampm = hours24 >= 12 ? 'PM' : 'AM';
-                        const hours12 = hours24 % 12 || 12;
-                        formattedTime = `${hours12}:${minutes} ${ampm}`;
-                        console.log('Formatted time:', formattedTime);
-                    }
+                if (timeStr.includes(':')) {
+                    const [hours, minutes] = timeStr.split(':');
+                    const h24 = parseInt(hours);
+                    const ampm = h24 >= 12 ? 'PM' : 'AM';
+                    const h12 = h24 % 12 || 12;
+                    formattedTime = `${h12}:${minutes} ${ampm}`;
                 }
-            } else {
-                console.log('Time is null/undefined/falsy');
             }
-            
-            console.log('Selected data for', currentTab, '- date:', date, 'time:', time, 'airport:', airport, 'airline:', airline);
-            
-            // Extract airport code (first 3 letters before the dash)
-            const airportCode = airport ? airport.split(' ')[0] : '';
-            
-            // Build airport + airline text with comma if both exist
-            let airportAirlineText = icon;
-            if (airportCode) {
-                airportAirlineText += ` ${airportCode}`;
-                if (airline) {
-                    airportAirlineText += `, ${airline}`;
+
+            const airportCode = airport ? airport.split(' ')[0] : 'TBD';
+            const airportAirlineText = airline
+                ? `✈️ ${airportCode} · ${airline}`
+                : `✈️ ${airportCode}`;
+
+            // Build email pre-fill
+            let emailBody = `Hi ${ride['First Name']},\n\nI saw your ride on dawaShare and would love to coordinate!\n\n`;
+            if (userInfo) {
+                if (currentTab === 'departures' && userInfo.depDate && userInfo.depTime) {
+                    const depAirportCode = userInfo.depAirport ? userInfo.depAirport.split(' ')[0] : 'TBD';
+                    emailBody += `• Departing: ${formatDate(userInfo.depDate)} at ${userInfo.depTime} to ${depAirportCode}\n`;
+                } else if (currentTab === 'arrivals' && userInfo.arrDate && userInfo.arrTime) {
+                    const arrAirportCode = userInfo.arrAirport ? userInfo.arrAirport.split(' ')[0] : 'TBD';
+                    emailBody += `• Arriving: ${formatDate(userInfo.arrDate)} at ${userInfo.arrTime} to ${arrAirportCode}\n`;
                 }
-            } else if (airline) {
-                airportAirlineText += ` ${airline}`;
+                if (userInfo.location) emailBody += `• Location: ${userInfo.location}\n`;
+                emailBody += `\nWould you be interested in sharing a ride?\n\nBest,\n${userInfo.firstName}`;
             } else {
-                airportAirlineText += ' Airport TBD';
+                emailBody += `• ${currentTab === 'departures' ? 'Departing' : 'Arriving'}: [ ADD YOUR DETAILS ]\n`;
+                emailBody += `• Location: [ ADD YOUR LOCATION ]\n\nLet me know if you're interested!\n\nBest,\n[Your name]`;
             }
-            
-            // Create pre-filled email with subject and body
-            // Try to get user's stored info from localStorage
-            const userInfo = JSON.parse(localStorage.getItem('dawaShare_userInfo') || '{}');
-            
-            let emailBody = `Hi ${ride['First Name']},\n\n` +
-                `I found your ride on dawaShare and I'm traveling around the same time!\n\n`;
-            
-            // Add recipient's info as context
-            emailBody += `You're ${currentTab === 'departures' ? 'departing' : 'arriving'} on ${formatDate(date)} at ${formattedTime} from ${airportCode || 'TBD'}${airline ? ` (${airline})` : ''}.\n\n`;
-            
-            // If we have user's info, include ONLY the relevant travel details based on current tab
-            if (userInfo.firstName) {
-                emailBody += `Here's my travel info:\n`;
-                
-                if (currentTab === 'departures') {
-                    // On departures tab - only show departure info
-                    if (userInfo.depDate && userInfo.depTime) {
-                        const depAirportCode = userInfo.depAirport ? userInfo.depAirport.split(' ')[0] : 'TBD';
-                        
-                        // Parse user's departure time
-                        let userDepTime = 'TBD';
-                        if (userInfo.depTime) {
-                            const timeStr = String(userInfo.depTime).trim();
-                            if (timeStr.includes('T')) {
-                                const timePart = timeStr.split('T')[1];
-                                const [hours, minutes] = timePart.split(':');
-                                const hours24 = parseInt(hours);
-                                const ampm = hours24 >= 12 ? 'PM' : 'AM';
-                                const hours12 = hours24 % 12 || 12;
-                                userDepTime = `${hours12}:${minutes} ${ampm}`;
-                            } else if (timeStr.includes(':')) {
-                                const [hours, minutes] = timeStr.split(':');
-                                const hours24 = parseInt(hours);
-                                const ampm = hours24 >= 12 ? 'PM' : 'AM';
-                                const hours12 = hours24 % 12 || 12;
-                                userDepTime = `${hours12}:${minutes} ${ampm}`;
-                            }
-                        }
-                        
-                        emailBody += `• Departing: ${formatDate(userInfo.depDate)} at ${userDepTime} from ${depAirportCode}`;
-                        if (userInfo.depAirline) {
-                            emailBody += ` (${userInfo.depAirline})`;
-                        }
-                        emailBody += `\n`;
-                    } else {
-                        emailBody += `• Departing: [ ADD YOUR DEPARTURE DETAILS ]\n`;
-                    }
-                } else {
-                    // On arrivals tab - only show arrival info
-                    if (userInfo.arrDate && userInfo.arrTime) {
-                        const arrAirportCode = userInfo.arrAirport ? userInfo.arrAirport.split(' ')[0] : 'TBD';
-                        
-                        // Parse user's arrival time
-                        let userArrTime = 'TBD';
-                        if (userInfo.arrTime) {
-                            const timeStr = String(userInfo.arrTime).trim();
-                            if (timeStr.includes('T')) {
-                                const timePart = timeStr.split('T')[1];
-                                const [hours, minutes] = timePart.split(':');
-                                const hours24 = parseInt(hours);
-                                const ampm = hours24 >= 12 ? 'PM' : 'AM';
-                                const hours12 = hours24 % 12 || 12;
-                                userArrTime = `${hours12}:${minutes} ${ampm}`;
-                            } else if (timeStr.includes(':')) {
-                                const [hours, minutes] = timeStr.split(':');
-                                const hours24 = parseInt(hours);
-                                const ampm = hours24 >= 12 ? 'PM' : 'AM';
-                                const hours12 = hours24 % 12 || 12;
-                                userArrTime = `${hours12}:${minutes} ${ampm}`;
-                            }
-                        }
-                        
-                        emailBody += `• Arriving: ${formatDate(userInfo.arrDate)} at ${userArrTime} to ${arrAirportCode}`;
-                        if (userInfo.arrAirline) {
-                            emailBody += ` (${userInfo.arrAirline})`;
-                        }
-                        emailBody += `\n`;
-                    } else {
-                        emailBody += `• Arriving: [ ADD YOUR ARRIVAL DETAILS ]\n`;
-                    }
-                }
-                
-                // Always prompt for location (whether they have it or not)
-                if (userInfo.location) {
-                    emailBody += `• Location: ${userInfo.location}\n`;
-                } else {
-                    emailBody += `• Location: [ ADD YOUR LOCATION ]\n`;
-                }
-                
-                emailBody += `\nWould you be interested in sharing a ride?\n\n`;
-                emailBody += `Best,\n${userInfo.firstName}`;
-            } else {
-                // No stored info - use simple template
-                emailBody += `I'd love to share a ride if our times work out. Here are my travel details:\n\n`;
-                emailBody += `• ${currentTab === 'departures' ? 'Departing' : 'Arriving'}: [ ADD YOUR ${currentTab === 'departures' ? 'DEPARTURE' : 'ARRIVAL'} INFO HERE ]\n`;
-                emailBody += `• Location: [ ADD YOUR LOCATION HERE ]\n\n`;
-                emailBody += `Let me know if you're interested!\n\n`;
-                emailBody += `Best,\n[Your name]`;
-            }
-            
-            const emailSubject = encodeURIComponent('dawaShare: Let\'s share a ride!');
+
+            const emailSubject = encodeURIComponent("dawaShare: Let's share a ride!");
             const mailtoLink = `mailto:${ride['Email']}?subject=${emailSubject}&body=${encodeURIComponent(emailBody)}`;
-            
+
             html += `
                 <div class="ride-card">
                     <div class="card-header">
-                        <div class="date-time" style="white-space: nowrap; flex-shrink: 0;">
+                        <div class="date-time" style="white-space:nowrap; flex-shrink:0;">
                             <span class="date-large">${formatDate(date)}</span>
                             <span class="time-large">${formattedTime}</span>
                         </div>
-                        <div class="rider-name-small" style="word-break: break-word; overflow-wrap: break-word; text-align: right; min-width: 0;">${ride['First Name']} ${ride['Last Name']}</div>
+                        <div class="rider-name-small" style="word-break:break-word; text-align:right; min-width:0;">${ride['First Name']} ${ride['Last Name']}</div>
                     </div>
-                    
                     <div class="card-info">
                         <div class="card-airport-airline">${airportAirlineText}</div>
                         ${ride['Location'] ? `<div class="card-location">📍 ${ride['Location']}${ride['Location'] === 'Other / Off-Campus' && ride['Location Other'] ? ` (${ride['Location Other']})` : ''}</div>` : ''}
                     </div>
-                    
                     <div class="card-actions">
                         ${ride['Phone'] ? `
                             <a href="${mailtoLink}" class="contact-btn">✉️ Email</a>
@@ -1296,53 +815,31 @@ function displayRides(rides) {
                             <a href="${mailtoLink}" class="contact-btn contact-btn-full">✉️ Email</a>
                         `}
                     </div>
-                </div>
-            `;
+                </div>`;
         });
-        
-        html += '</div>'; // Close individuals grid
+
+        html += '</div>';
     }
-    
+
     ridesTable.innerHTML = html;
 }
 
-// ===== HELPER FUNCTION =====
+// ===== HELPER: FORMAT DATE =====
 function formatDate(dateString) {
     if (!dateString) return 'Date TBD';
-    
-    // Parse YYYY-MM-DD format manually to avoid any timezone issues
-    const dateOnly = dateString.split('T')[0]; // Remove time if present: "2025-12-17"
+    const dateOnly = dateString.split('T')[0];
     let [year, month, day] = dateOnly.split('-').map(Number);
-    
-    // Auto-correct year if it's too far in the future (likely typo)
-    // If year is more than 1 year from now, assume they meant current academic year
     const currentYear = new Date().getFullYear();
-    if (year > currentYear + 1) {
-        console.log(`Auto-correcting year from ${year} to ${year - 1}`);
-        year = year - 1;
-    }
-    
-    // Create date in local timezone to get weekday
+    if (year > currentYear + 1) year = year - 1;
     const date = new Date(year, month - 1, day);
-    
-    // Format as "Day, M/D" to match shuttle format (e.g., "Sun, 12/21")
-    return date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'numeric', 
-        day: 'numeric' 
-    });
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
 }
 
 // ===== EMAIL FIELD FORMATTING =====
 const emailInput = document.getElementById('emailUsername');
-
-// Validate email username (no special characters except . and _)
 emailInput.addEventListener('input', (e) => {
-    let value = e.target.value;
-    // Remove any @ symbols or invalid characters
-    value = value.replace(/@.*$/, ''); // Remove anything after @
-    value = value.replace(/[^a-zA-Z0-9._-]/g, ''); // Only allow letters, numbers, dots, underscores, hyphens
-    e.target.value = value.toLowerCase();
+    // Allow full email addresses (not just SUNet IDs)
+    e.target.value = e.target.value.replace(/[^a-zA-Z0-9._@+-]/g, '').toLowerCase();
 });
 
 // ===== PHONE NUMBER FORMATTING =====
@@ -1350,17 +847,12 @@ const phoneInput = document.getElementById('phone');
 phoneInput.addEventListener('input', (e) => {
     let value = e.target.value.replace(/\D/g, '');
     if (value.length > 10) value = value.slice(0, 10);
-    
-    if (value.length >= 6) {
-        value = `(${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6)}`;
-    } else if (value.length >= 3) {
-        value = `(${value.slice(0, 3)}) ${value.slice(3)}`;
-    }
-    
+    if (value.length >= 6) value = `(${value.slice(0,3)}) ${value.slice(3,6)}-${value.slice(6)}`;
+    else if (value.length >= 3) value = `(${value.slice(0,3)}) ${value.slice(3)}`;
     e.target.value = value;
 });
 
-// ===== LOCATION "OTHER" FIELD LOGIC =====
+// ===== LOCATION "OTHER" FIELD =====
 const locationSelect = document.getElementById('location');
 const locationOtherRow = document.getElementById('locationOtherRow');
 const locationOtherInput = document.getElementById('locationOther');
@@ -1377,37 +869,31 @@ locationSelect.addEventListener('change', (e) => {
 });
 
 // ===== DATE VALIDATION =====
-// Set minimum date to today and maximum to 6 months in future
 const today = new Date();
 const todayStr = today.toISOString().split('T')[0];
 const sixMonthsLater = new Date(today);
 sixMonthsLater.setMonth(today.getMonth() + 6);
 const maxDateStr = sixMonthsLater.toISOString().split('T')[0];
-
 document.getElementById('depDate').setAttribute('min', todayStr);
 document.getElementById('depDate').setAttribute('max', maxDateStr);
 document.getElementById('arrDate').setAttribute('min', todayStr);
 document.getElementById('arrDate').setAttribute('max', maxDateStr);
 
-// Load rides and show modal when page loads
+// ===== INIT =====
+// Note: loadRides() is called by app.js when entering a group board.
+// DOMContentLoaded only sets up the time slider — no auto-open modal.
 window.addEventListener('DOMContentLoaded', () => {
-    populateDropdowns();
-    loadRides();
-    // Initialize time slider
     updateSliderRange();
     updateTimeDisplay();
-    // Show modal automatically on page load
-    modal.classList.add('active');
 });
-// ===== PARALLAX BACKGROUND EFFECT =====
+
+// ===== PARALLAX =====
 let ticking = false;
 window.addEventListener('scroll', () => {
     if (!ticking) {
         window.requestAnimationFrame(() => {
             const scrolled = window.pageYOffset;
-            // Move grid at 15% speed of scroll (slower parallax)
-            const parallaxOffset = scrolled * 0.15;
-            document.body.style.setProperty('--parallax-y', `${parallaxOffset}px`);
+            document.body.style.setProperty('--parallax-y', `${scrolled * 0.15}px`);
             ticking = false;
         });
         ticking = true;

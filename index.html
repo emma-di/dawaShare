@@ -14,303 +14,377 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Main Page Content -->
-    <div class="main-container">
-        <header>
-            <div class="logo-section">
-                <span class="logo-icon">🚗✈️</span>
-                <h1>dawaShare</h1>
-            </div>
-            <button id="openFormBtn" class="add-ride-btn">+ Add Your Ride</button>
-        </header>
 
-        <div class="rides-container">
-            <h2>Available Rides</h2>
-            
-            <!-- Tabs for Departures and Arrivals -->
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="departures">Departures</button>
-                <button class="tab-btn" data-tab="arrivals">Arrivals</button>
-            </div>
-            
-            <!-- Filters -->
-            <div class="filters-container">
-                <!-- Date Filter (Multi-select) -->
-                <div class="filter-dropdown">
-                    <button class="filter-dropdown-btn" id="dateFilterBtn">
-                        All Dates
-                        <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="filter-dropdown-panel" id="dateFilterPanel">
-                        <div class="filter-options" id="dateFilterOptions">
-                            <!-- Checkboxes will be populated here -->
-                        </div>
-                        <div class="filter-panel-footer">
-                            <button class="clear-filter-btn" id="clearDateBtn">Clear All</button>
-                            <button class="done-filter-btn" id="doneDateBtn">Done</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Type Filter (Multi-select) -->
-                <div class="filter-dropdown">
-                    <button class="filter-dropdown-btn" id="typeFilterBtn">
-                        All Types
-                        <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="filter-dropdown-panel" id="typeFilterPanel">
-                        <div class="filter-options" id="typeFilterOptions">
-                            <div class="filter-option">
-                                <input type="checkbox" id="type-shuttle" value="shuttle">
-                                <label for="type-shuttle">Shuttles Only</label>
-                            </div>
-                            <div class="filter-option">
-                                <input type="checkbox" id="type-individual" value="individual">
-                                <label for="type-individual">Individuals Only</label>
-                            </div>
-                        </div>
-                        <div class="filter-panel-footer">
-                            <button class="clear-filter-btn" id="clearTypeBtn">Clear All</button>
-                            <button class="done-filter-btn" id="doneTypeBtn">Done</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Airport Filter (Single select) -->
-                <select id="filterAirport" class="filter-select">
-                    <option value="">All Airports</option>
-                </select>
-                
-                <!-- Time Filter (Slider) -->
-                <div class="filter-dropdown">
-                    <button class="filter-dropdown-btn" id="timeFilterBtn">
-                        All Times
-                        <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="filter-dropdown-panel time-slider-panel" id="timeFilterPanel">
-                        <div class="time-slider-container">
-                            <div class="time-slider-header">
-                                <span class="time-slider-label" id="timeRangeDisplay">12:00 AM - 12:00 AM</span>
-                                <p class="time-slider-note">Time leaving campus / leaving airport</p>
-                            </div>
-                            <div class="time-slider-wrapper">
-                                <input type="range" id="timeSliderMin" class="time-slider time-slider-min" 
-                                       min="0" max="1440" value="0" step="30">
-                                <input type="range" id="timeSliderMax" class="time-slider time-slider-max" 
-                                       min="0" max="1440" value="1440" step="30">
-                                <div class="time-slider-track">
-                                    <div class="time-slider-range" id="timeSliderRange"></div>
-                                </div>
-                            </div>
-                            <div class="time-slider-labels">
-                                <span>12:00 AM</span>
-                                <span>6:00 AM</span>
-                                <span>12:00 PM</span>
-                                <span>6:00 PM</span>
-                                <span>12:00 AM</span>
-                            </div>
-                        </div>
-                        <div class="filter-panel-footer">
-                            <button class="clear-filter-btn" id="clearTimeBtn">Reset</button>
-                            <button class="done-filter-btn" id="doneTimeBtn">Done</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Location Filter (Multi-select) -->
-                <div class="filter-dropdown">
-                    <button class="filter-dropdown-btn" id="locationFilterBtn">
-                        All Locations
-                        <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="filter-dropdown-panel" id="locationFilterPanel">
-                        <div class="filter-options" id="locationFilterOptions">
-                            <!-- Checkboxes will be populated here -->
-                        </div>
-                        <div class="filter-panel-footer">
-                            <button class="clear-filter-btn" id="clearLocationBtn">Clear All</button>
-                            <button class="done-filter-btn" id="doneLocationBtn">Done</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Clear All Filters Button -->
-                <button id="clearAllFiltersBtn" class="clear-all-filters-btn">Clear All Filters</button>
-            </div>
-            
-            <div id="ridesTable">
-                <!-- Rides will be displayed here -->
-                <p class="empty-state">No rides yet. Be the first to share your ride info!</p>
-            </div>
+    <!-- ===== HOME SCREEN ===== -->
+    <div id="homeScreen" style="display:flex; flex-direction:column; height:100vh;">
+
+        <div class="home-header">
+            <span class="logo-icon">🚗✈️</span>
+            <h1>dawaShare</h1>
         </div>
-        
-        <!-- Footer -->
-        <footer class="site-footer">
-            <p class="footer-tagline">Made for Students for a Sustainable Stanford 🌎💞</p>
-            <a href="mailto:emmadi@stanford.edu?subject=dawaShare%20Feedback" class="footer-contact">
-                Suggestions or feedback?
-            </a>
-        </footer>
+
+        <!-- My Shares Tab Content -->
+        <div class="home-tab-content active" id="mySharesTab">
+            <div id="mySharesList"></div>
+            <button class="join-btn" id="joinBtn">+ Join a dawaShare</button>
+        </div>
+
+        <!-- Create Tab Content -->
+        <div class="home-tab-content" id="createTab">
+            <p class="create-label">Choose a type:</p>
+            <button class="create-option-btn" id="createStanfordBtn">
+                <span class="create-option-icon">🌲</span>
+                <div>
+                    <div class="create-option-title">Stanford dawaShare</div>
+                    <div class="create-option-sub">Pre-loaded with dorms & Bay Area airports</div>
+                </div>
+            </button>
+            <button class="create-option-btn" id="createCustomBtn">
+                <span class="create-option-icon">✈️</span>
+                <div>
+                    <div class="create-option-title">Custom dawaShare</div>
+                    <div class="create-option-sub">Set your own locations & airports</div>
+                </div>
+            </button>
+        </div>
+
+        <!-- Bottom Tab Bar -->
+        <div class="home-bottom-tabs">
+            <button class="home-tab-btn active" data-tab="mySharesTab">My Shares</button>
+            <button class="home-tab-btn" data-tab="createTab">Create</button>
+        </div>
+
     </div>
 
-    <!-- Popup Modal Form -->
-    <div id="formModal" class="modal">
-        <div class="modal-content">
-            <!-- Sticky Header with Gradient -->
-            <div class="modal-header-sticky">
-                <div class="form-header">
-                    <h2>Share Your Ride Info</h2>
-                    <p>Help fellow Stanford students find carpool matches</p>
+    <!-- ===== RIDE BOARD ===== -->
+    <div id="rideBoard" style="display:none;">
+        <div class="main-container">
+            <header>
+                <button id="backToHomeBtn" class="back-btn">← Back</button>
+                <div class="logo-section">
+                    <div id="groupNameDisplay" class="group-name-header"></div>
+                    <div id="groupCodeDisplay" class="group-code-header" onclick="navigator.clipboard.writeText(this.textContent).then(() => { const orig = this.textContent; this.textContent = 'Copied!'; setTimeout(() => this.textContent = orig, 1500); })" title="Click to copy" style="cursor:pointer;"></div>
                 </div>
-                <button class="close-btn" id="closeBtn">&times;</button>
-            </div>
+                <button id="openFormBtn" class="add-ride-btn">+ Add Your Ride</button>
+            </header>
 
-            <!-- Scrollable Form Content -->
-            <div class="modal-body">
-                <form id="rideForm">
-                <!-- Info Notice -->
-                <div class="form-info-notice">
-                    <strong>ℹ️ Note:</strong> If you submit this form multiple times, your new information will update your existing entry. Any fields you don't fill out will keep their previous values.
+            <div class="rides-container">
+                <h2>Available Rides</h2>
+                
+                <!-- Tabs for Departures and Arrivals -->
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="departures">Departures</button>
+                    <button class="tab-btn" data-tab="arrivals">Arrivals</button>
                 </div>
                 
-                <!-- Personal Info Section -->
-                <div class="form-section">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="firstName">First Name <span class="required">*</span></label>
-                            <input type="text" id="firstName" name="firstName" autocapitalize="words" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="lastName">Last Name <span class="required">*</span></label>
-                            <input type="text" id="lastName" name="lastName" autocapitalize="words" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label for="emailUsername">Student Email <span class="required">*</span></label>
-                            <div class="email-input-wrapper">
-                                <input type="text" id="emailUsername" name="emailUsername" placeholder="SUNet ID" required>
-                                <span class="email-domain">@stanford.edu</span>
+                <!-- Filters -->
+                <div class="filters-container">
+                    <!-- Date Filter (Multi-select) -->
+                    <div class="filter-dropdown">
+                        <button class="filter-dropdown-btn" id="dateFilterBtn">
+                            All Dates
+                            <span class="dropdown-arrow">▼</span>
+                        </button>
+                        <div class="filter-dropdown-panel" id="dateFilterPanel">
+                            <div class="filter-options" id="dateFilterOptions">
+                                <!-- Checkboxes will be populated here -->
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="phone">Phone Number</label>
-                            <input type="tel" id="phone" name="phone" placeholder="(123) 456-7890">
-                        </div>
-                        <div class="form-group">
-                            <label for="location">Location</label>
-                            <select id="location" name="location">
-                                <option value="">Select location...</option>
-                                <!-- UPDATE THESE VALUES in script.js - LOCATIONS array -->
-                            </select>
+                            <div class="filter-panel-footer">
+                                <button class="clear-filter-btn" id="clearDateBtn">Clear All</button>
+                                <button class="done-filter-btn" id="doneDateBtn">Done</button>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Conditional field for Other/Off-Campus -->
-                    <div class="form-row" id="locationOtherRow" style="display: none;">
-                        <div class="form-group full-width">
-                            <label for="locationOther">Please specify your location</label>
-                            <input type="text" id="locationOther" name="locationOther" placeholder="e.g., Escondido Village, Palo Alto, Mountain View">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Departure Info Section -->
-                <div class="form-section">
-                    <div class="section-header">
-                        <h3>Departure Info</h3>
-                        <button type="button" class="skip-section-btn" data-section="departure">
-                            Skip for now
+                    <!-- Type Filter (Multi-select) -->
+                    <div class="filter-dropdown">
+                        <button class="filter-dropdown-btn" id="typeFilterBtn">
+                            All Types
+                            <span class="dropdown-arrow">▼</span>
                         </button>
-                    </div>
-                    <div id="departureSection" class="collapsible-section">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="depDate">Date <span class="required">*</span></label>
-                                <input type="date" id="depDate" name="depDate" required>
+                        <div class="filter-dropdown-panel" id="typeFilterPanel">
+                            <div class="filter-options" id="typeFilterOptions">
+                                <div class="filter-option">
+                                    <input type="checkbox" id="type-shuttle" value="shuttle">
+                                    <label for="type-shuttle">Shuttles Only</label>
+                                </div>
+                                <div class="filter-option">
+                                    <input type="checkbox" id="type-individual" value="individual">
+                                    <label for="type-individual">Individuals Only</label>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="depTime">Time <strong>leaving campus</strong> <span class="required">*</span></label>
-                                <input type="time" id="depTime" name="depTime" required>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="depAirport">Airport <span class="required">*</span></label>
-                                <select id="depAirport" name="depAirport" required>
-                                    <option value="">Select airport...</option>
-                                    <!-- UPDATE THESE VALUES in script.js - AIRPORTS array -->
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="depAirline">Airline</label>
-                                <select id="depAirline" name="depAirline">
-                                    <option value="">Select airline...</option>
-                                    <!-- UPDATE THESE VALUES in script.js - AIRLINES array -->
-                                </select>
+                            <div class="filter-panel-footer">
+                                <button class="clear-filter-btn" id="clearTypeBtn">Clear All</button>
+                                <button class="done-filter-btn" id="doneTypeBtn">Done</button>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Arrival Info Section -->
-                <div class="form-section">
-                    <div class="section-header">
-                        <h3>Arrival Info</h3>
-                        <button type="button" class="skip-section-btn" data-section="arrival">
-                            Skip for now
+                    
+                    <!-- Airport Filter (Single select) -->
+                    <select id="filterAirport" class="filter-select">
+                        <option value="">All Airports</option>
+                    </select>
+                    
+                    <!-- Time Filter (Slider) -->
+                    <div class="filter-dropdown">
+                        <button class="filter-dropdown-btn" id="timeFilterBtn">
+                            All Times
+                            <span class="dropdown-arrow">▼</span>
                         </button>
-                    </div>
-                    <div id="arrivalSection" class="collapsible-section">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="arrDate">Date <span class="required">*</span></label>
-                                <input type="date" id="arrDate" name="arrDate" required>
+                        <div class="filter-dropdown-panel time-slider-panel" id="timeFilterPanel">
+                            <div class="time-slider-container">
+                                <div class="time-slider-header">
+                                    <span class="time-slider-label" id="timeRangeDisplay">12:00 AM - 12:00 AM</span>
+                                    <p class="time-slider-note">Time leaving campus / leaving airport</p>
+                                </div>
+                                <div class="time-slider-wrapper">
+                                    <input type="range" id="timeSliderMin" class="time-slider time-slider-min" 
+                                           min="0" max="1440" value="0" step="30">
+                                    <input type="range" id="timeSliderMax" class="time-slider time-slider-max" 
+                                           min="0" max="1440" value="1440" step="30">
+                                    <div class="time-slider-track">
+                                        <div class="time-slider-range" id="timeSliderRange"></div>
+                                    </div>
+                                </div>
+                                <div class="time-slider-labels">
+                                    <span>12:00 AM</span>
+                                    <span>6:00 AM</span>
+                                    <span>12:00 PM</span>
+                                    <span>6:00 PM</span>
+                                    <span>12:00 AM</span>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="arrTime">Time <strong>leaving airport</strong> <span class="required">*</span></label>
-                                <input type="time" id="arrTime" name="arrTime" required>
+                            <div class="filter-panel-footer">
+                                <button class="clear-filter-btn" id="clearTimeBtn">Reset</button>
+                                <button class="done-filter-btn" id="doneTimeBtn">Done</button>
                             </div>
                         </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="arrAirport">Airport <span class="required">*</span></label>
-                                <select id="arrAirport" name="arrAirport" required>
-                                    <option value="">Select airport...</option>
-                                    <!-- UPDATE THESE VALUES in script.js - AIRPORTS array -->
-                                </select>
+                    </div>
+                    
+                    <!-- Location Filter (Multi-select) -->
+                    <div class="filter-dropdown">
+                        <button class="filter-dropdown-btn" id="locationFilterBtn">
+                            All Locations
+                            <span class="dropdown-arrow">▼</span>
+                        </button>
+                        <div class="filter-dropdown-panel" id="locationFilterPanel">
+                            <div class="filter-options" id="locationFilterOptions">
+                                <!-- Checkboxes will be populated here -->
                             </div>
-                            <div class="form-group">
-                                <label for="arrAirline">Airline</label>
-                                <select id="arrAirline" name="arrAirline">
-                                    <option value="">Select airline...</option>
-                                    <!-- UPDATE THESE VALUES in script.js - AIRLINES array -->
-                                </select>
+                            <div class="filter-panel-footer">
+                                <button class="clear-filter-btn" id="clearLocationBtn">Clear All</button>
+                                <button class="done-filter-btn" id="doneLocationBtn">Done</button>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Clear All Filters Button -->
+                    <button id="clearAllFiltersBtn" class="clear-all-filters-btn">Clear All Filters</button>
                 </div>
-
-                <!-- Form Actions -->
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" id="alreadySubmittedBtn">
-                        Skip for now
-                    </button>
-                    <button type="submit" class="btn-primary">Submit</button>
+                
+                <div id="ridesTable">
+                    <p class="empty-state">No rides yet. Be the first to share your ride info!</p>
                 </div>
-            </form>
             </div>
-            <!-- End modal-body -->
+            
+            <!-- Footer -->
+            <footer class="site-footer">
+                <p class="footer-tagline">Made for Students for a Sustainable Stanford 🌎💞</p>
+                <a href="mailto:emmadi@stanford.edu?subject=dawaShare%20Feedback" class="footer-contact">
+                    Suggestions or feedback?
+                </a>
+            </footer>
         </div>
     </div>
 
+    <!-- ===== MODAL: Add Ride Form ===== -->
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header-sticky">
+                <div class="form-header">
+                    <h2>Share Your Ride Info</h2>
+                    <p id="formSubtitle">Help fellow students find carpool matches</p>
+                </div>
+                <button class="close-btn" id="closeBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="rideForm">
+                    <div class="form-info-notice">
+                        <strong>ℹ️ Note:</strong> If you submit this form multiple times, your new information will update your existing entry. Any fields you don't fill out will keep their previous values.
+                    </div>
+                    
+                    <!-- Personal Info -->
+                    <div class="form-section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">First Name <span class="required">*</span></label>
+                                <input type="text" id="firstName" name="firstName" autocapitalize="words" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name <span class="required">*</span></label>
+                                <input type="text" id="lastName" name="lastName" autocapitalize="words" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="emailUsername">Email <span class="required">*</span></label>
+                                <div class="email-input-wrapper">
+                                    <input type="text" id="emailUsername" name="emailUsername" placeholder="your email" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" name="phone" placeholder="(123) 456-7890">
+                            </div>
+                            <div class="form-group">
+                                <label for="location">Location</label>
+                                <select id="location" name="location">
+                                    <option value="">Select location...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row" id="locationOtherRow" style="display: none;">
+                            <div class="form-group full-width">
+                                <label for="locationOther">Please specify your location</label>
+                                <input type="text" id="locationOther" name="locationOther" placeholder="e.g., Escondido Village, Palo Alto">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Departure Info -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h3>Departure Info</h3>
+                            <button type="button" class="skip-section-btn" data-section="departure">Skip for now</button>
+                        </div>
+                        <div id="departureSection" class="collapsible-section">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="depDate">Date <span class="required">*</span></label>
+                                    <input type="date" id="depDate" name="depDate" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="depTime">Time <strong>leaving</strong> <span class="required">*</span></label>
+                                    <input type="time" id="depTime" name="depTime" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="depAirport">Airport <span class="required">*</span></label>
+                                    <select id="depAirport" name="depAirport" required>
+                                        <option value="">Select airport...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="depAirline">Airline</label>
+                                    <select id="depAirline" name="depAirline">
+                                        <option value="">Select airline...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Arrival Info -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h3>Arrival Info</h3>
+                            <button type="button" class="skip-section-btn" data-section="arrival">Skip for now</button>
+                        </div>
+                        <div id="arrivalSection" class="collapsible-section">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="arrDate">Date <span class="required">*</span></label>
+                                    <input type="date" id="arrDate" name="arrDate" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="arrTime">Time <strong>leaving airport</strong> <span class="required">*</span></label>
+                                    <input type="time" id="arrTime" name="arrTime" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="arrAirport">Airport <span class="required">*</span></label>
+                                    <select id="arrAirport" name="arrAirport" required>
+                                        <option value="">Select airport...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="arrAirline">Airline</label>
+                                    <select id="arrAirline" name="arrAirline">
+                                        <option value="">Select airline...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="alreadySubmittedBtn">Skip for now</button>
+                        <button type="submit" class="btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: Join a dawaShare ===== -->
+    <div id="joinModal" class="modal">
+        <div class="modal-content modal-content-sm">
+            <div class="modal-header-sticky">
+                <h2>Join a dawaShare</h2>
+                <button class="close-btn" id="closeJoinModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-label">Enter your group code:</p>
+                <input type="text" id="joinCodeInput" class="code-input" placeholder="e.g. AB3X7K" maxlength="6" autocapitalize="characters">
+                <p id="joinError" class="error-text"></p>
+                <button class="btn-primary full-width" id="joinSubmitBtn">Join</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: Custom Create ===== -->
+    <div id="customCreateModal" class="modal">
+        <div class="modal-content modal-content-sm">
+            <div class="modal-header-sticky">
+                <h2>Name your dawaShare</h2>
+                <button class="close-btn" id="closeCustomModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-label">Group name:</p>
+                <input type="text" id="customGroupName" class="code-input" placeholder="e.g. Spring Break 2026">
+                <p id="customCreateError" class="error-text"></p>
+                <button class="btn-primary full-width" id="customCreateSubmit">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: Code Reveal ===== -->
+    <div id="codeRevealModal" class="modal">
+        <div class="modal-content modal-content-sm">
+            <div class="modal-header-sticky">
+                <h2>Your dawaShare is ready! 🎉</h2>
+            </div>
+            <div class="modal-body" style="text-align:center;">
+                <p id="newGroupName" class="reveal-group-name"></p>
+                <p class="reveal-label">Share this code with your group:</p>
+                <div class="reveal-code" id="newGroupCode"></div>
+                <p class="reveal-expiry">⏳ Auto-expires 30 days after the last travel date posted</p>
+                <button class="btn-secondary full-width" id="copyCodeBtn">Copy code</button>
+                <button class="btn-primary full-width" id="enterGroupBtn">Enter dawaShare →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SCRIPTS (always last) ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
+    <script src="app.js"></script>
     <script src="script.js"></script>
+
 </body>
 </html>
