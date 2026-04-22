@@ -29,41 +29,33 @@ function populateDropdowns() {
                 sel.appendChild(opt);
             });
         } else {
-            // Only replace if it's still a select (not already replaced)
             if (sel.tagName !== 'SELECT') return;
-
-            // No airports configured — swap to free text input with autocomplete
-            const wrapper = document.createElement('div');
-            wrapper.style.position = 'relative';
-            wrapper.style.width = '100%';
 
             const input = document.createElement('input');
             input.type = 'text';
             input.id = id;
             input.name = id;
             input.placeholder = 'e.g. LAX, JFK, Heathrow...';
+            input.style.width = '100%';
             if (sel.hasAttribute('required')) input.setAttribute('required', '');
+            sel.replaceWith(input);
 
             const suggBox = document.createElement('div');
             suggBox.className = 'airport-suggestions-list';
             suggBox.style.display = 'none';
+            suggBox.style.position = 'fixed';
+            suggBox.style.zIndex = '9999';
+            document.body.appendChild(suggBox);
 
-            wrapper.appendChild(input);
-            wrapper.appendChild(suggBox);
-            sel.replaceWith(wrapper);
-
-            // Wire up autocomplete
             input.addEventListener('input', () => {
                 const query = input.value.toLowerCase();
                 suggBox.innerHTML = '';
                 if (query.length < 2) { suggBox.style.display = 'none'; return; }
-
                 if (airportData.length === 0) {
-                    suggBox.innerHTML = '<div class="airport-suggestion">Loading airports...</div>';
+                    suggBox.innerHTML = '<div class="airport-suggestion">Loading...</div>';
                     suggBox.style.display = 'block';
                     return;
                 }
-
                 const matches = airportData
                     .filter(a => a.iata && (
                         a.iata.toLowerCase().startsWith(query) ||
@@ -71,16 +63,18 @@ function populateDropdowns() {
                         a.city.toLowerCase().includes(query)
                     ))
                     .slice(0, 6);
-
                 if (matches.length === 0) { suggBox.style.display = 'none'; return; }
-
+                const rect = input.getBoundingClientRect();
+                suggBox.style.top = (rect.bottom + 4) + 'px';
+                suggBox.style.left = rect.left + 'px';
+                suggBox.style.width = rect.width + 'px';
                 matches.forEach(airport => {
                     const item = document.createElement('div');
                     item.className = 'airport-suggestion';
                     item.textContent = `${airport.iata} — ${airport.city}`;
                     item.addEventListener('mousedown', (e) => {
-                        e.preventDefault(); // prevent blur before click
-                        input.value = `${airport.iata} — ${airport.city}`;
+                        e.preventDefault();
+                        input.value = `${airport.iata} - ${airport.city}`;
                         suggBox.style.display = 'none';
                     });
                     suggBox.appendChild(item);
