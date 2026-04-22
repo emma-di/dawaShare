@@ -23,17 +23,20 @@ function showRideBoard(group) {
     document.getElementById('homeScreen').style.display = 'none';
     document.getElementById('rideBoard').style.display = 'block';
     document.getElementById('groupNameDisplay').textContent = group.name || group.code;
-    document.getElementById('groupCodeDisplay').textContent = group.code;
     window.history.pushState({}, '', `/${group.code}`);
     const subtitle = document.getElementById('formSubtitle');
     if (subtitle) {
-        subtitle.textContent = group.type === 'stanford' 
+        subtitle.textContent = group.type === 'stanford'
             ? 'Help fellow Stanford students find carpool matches'
             : 'Help your group find carpool matches';
     }
-    // script.js will call loadRides() on DOMContentLoaded,
-    // but when navigating here after init we call it manually
-    if (typeof loadRides === 'function') loadRides();
+    if (typeof loadRides === 'function') {
+        if (airportData.length === 0) {
+            loadAirports().then(() => loadRides());
+        } else {
+            loadRides();
+        }
+    }
 }
 
 // ===== HOME TABS =====

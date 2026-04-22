@@ -62,8 +62,10 @@
             <header>
                 <button id="backToHomeBtn" class="back-btn">← Back</button>
                 <div class="logo-section">
-                    <div id="groupNameDisplay" class="group-name-header"></div>
-                    <div id="groupCodeDisplay" class="group-code-header" onclick="navigator.clipboard.writeText(this.textContent).then(() => { const orig = this.textContent; this.textContent = 'Copied!'; setTimeout(() => this.textContent = orig, 1500); })" title="Click to copy" style="cursor:pointer;"></div>
+                    <div id="groupNameDisplay" class="group-name-header" 
+                        onclick="navigator.clipboard.writeText(window.location.href).then(() => { const orig = this.textContent; this.textContent = 'Copied!'; setTimeout(() => this.textContent = orig, 1500); })" 
+                        title="Click to copy link"
+                        style="cursor:pointer;"></div>
                 </div>
                 <button id="openFormBtn" class="add-ride-btn">+ Add Your Ride</button>
             </header>
