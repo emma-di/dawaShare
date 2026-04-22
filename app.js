@@ -15,6 +15,7 @@ function saveGroup(group) {
 function showHomeScreen() {
     document.getElementById('homeScreen').style.display = 'flex';
     document.getElementById('rideBoard').style.display = 'none';
+    window.history.pushState({}, '', '/');
 }
 
 function showRideBoard(group) {
@@ -23,6 +24,7 @@ function showRideBoard(group) {
     document.getElementById('rideBoard').style.display = 'block';
     document.getElementById('groupNameDisplay').textContent = group.name || group.code;
     document.getElementById('groupCodeDisplay').textContent = group.code;
+    window.history.pushState({}, '', `/${group.code}`);
     const subtitle = document.getElementById('formSubtitle');
     if (subtitle) {
         subtitle.textContent = group.type === 'stanford' 
@@ -337,7 +339,6 @@ window.addEventListener('DOMContentLoaded', () => {
                     saveGroup(data);
                     renderMyShares();
                     showRideBoard(data);
-                    window.history.replaceState({}, '', '/');
                 }
                 // if no match, just show home screen normally
             });
