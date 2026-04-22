@@ -231,23 +231,46 @@ document.getElementById('customCreateSubmit').addEventListener('click', async ()
     await createGroup(type, name);
 });
 
+// ===== SLUGIFY =====
+function slugify(text) {
+    return text
+        .toLowerCase()
+        .replace(/['']/g, '')           // remove apostrophes
+        .replace(/[^a-z0-9]+/g, '-')   // spaces/special chars → dashes
+        .replace(/^-+|-+$/g, '');       // trim leading/trailing dashes
+}
+
+async function generateSlug(name) {
+    const base = slugify(name);
+    // Try base slug first, then base-2, base-3, etc.
+    let candidate = base;
+    let suffix = 2;
+    while (true) {
+        const { data } = await supabaseClient
+            .from('groups')
+            .select('id')
+            .eq('code', candidate)
+            .single();
+        if (!data) return candidate; // no collision, use it
+        candidate = `${base}-${suffix}`;
+        suffix++;
+    }
+}
+
 async function createGroup(type, name) {
-    // Collect selected airports for generic groups
     const selectedAirports = type === 'generic'
         ? Array.from(document.querySelectorAll('#selectedAirports .airport-tag'))
               .map(tag => tag.dataset.value)
         : [];
-    // Try generating a unique code (retry up to 5 times on collision)
-    let code, data, error;
-    for (let i = 0; i < 5; i++) {
-        code = generateCode();
-        ({ data, error } = await supabaseClient
-            .from('groups')
-            .insert({ code, type, name, custom_airports: selectedAirports })
-            .select()
-            .single());
-        if (!error) break;
-    }
+
+    // Generate slug-based code from name
+    const code = await generateSlug(name);
+
+    const { data, error } = await supabaseClient
+        .from('groups')
+        .insert({ code, type, name, custom_airports: selectedAirports })
+        .select()
+        .single();
 
     if (error || !data) {
         alert('Something went wrong creating the group. Try again!');
@@ -256,7 +279,6 @@ async function createGroup(type, name) {
 
     saveGroup(data);
 
-    // Show the code reveal modal
     document.getElementById('newGroupCode').textContent = data.code;
     document.getElementById('newGroupName').textContent = data.name;
     document.getElementById('codeRevealModal').classList.add('active');
@@ -302,9 +324,9 @@ window.addEventListener('DOMContentLoaded', () => {
     loadAirports(); // load airport data in background
     setupAirportAutocomplete('airportSearchInput', 'airportSuggestions');
 
-    // ===== DEEP LINK: auto-join from /XXXXXX =====
-    const pathCode = window.location.pathname.replace('/', '').toUpperCase();
-    if (pathCode && pathCode.length === 6) {
+    // ===== DEEP LINK: auto-join from /slug =====
+    const pathCode = window.location.pathname.replace('/', '').toLowerCase();
+    if (pathCode && pathCode.length > 0) {
         supabaseClient
             .from('groups')
             .select('*')
@@ -317,6 +339,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     showRideBoard(data);
                     window.history.replaceState({}, '', '/');
                 }
+                // if no match, just show home screen normally
             });
     }
 });
