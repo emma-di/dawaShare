@@ -265,24 +265,15 @@ async function createGroup(type, name) {
         document.getElementById('codeRevealModal').classList.remove('active');
         showRideBoard(data);
     };
-
-    // Show shareable link instead of just code
-    const shareUrl = `${window.location.origin}/${data.code}`;
-    document.getElementById('newGroupCode').textContent = data.code;
-    document.getElementById('copyCodeBtn').onclick = () => {
-        navigator.clipboard.writeText(shareUrl).then(() => {
-            document.getElementById('copyCodeBtn').textContent = 'Copied link!';
-            setTimeout(() => document.getElementById('copyCodeBtn').textContent = 'Copy link', 2000);
-        });
-    };
 }
 
 // ===== CODE COPY =====
 document.getElementById('copyCodeBtn').addEventListener('click', () => {
     const code = document.getElementById('newGroupCode').textContent;
-    navigator.clipboard.writeText(code).then(() => {
-        document.getElementById('copyCodeBtn').textContent = 'Copied!';
-        setTimeout(() => document.getElementById('copyCodeBtn').textContent = 'Copy code', 2000);
+    const shareUrl = `${window.location.origin}/${code}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        document.getElementById('copyCodeBtn').textContent = 'Copied link!';
+        setTimeout(() => document.getElementById('copyCodeBtn').textContent = 'Copy link', 2000);
     });
 });
 
@@ -310,22 +301,23 @@ window.addEventListener('DOMContentLoaded', () => {
     showHomeScreen();
     loadAirports(); // load airport data in background
     setupAirportAutocomplete('airportSearchInput', 'airportSuggestions');
+
+    // ===== DEEP LINK: auto-join from /XXXXXX =====
+    const pathCode = window.location.pathname.replace('/', '').toUpperCase();
+    if (pathCode && pathCode.length === 6) {
+        supabaseClient
+            .from('groups')
+            .select('*')
+            .eq('code', pathCode)
+            .single()
+            .then(({ data, error }) => {
+                if (data && !error) {
+                    saveGroup(data);
+                    renderMyShares();
+                    showRideBoard(data);
+                    window.history.replaceState({}, '', '/');
+                }
+            });
+    }
 });
 
-// ===== DEEP LINK: auto-join from /XXXXXX =====
-const pathCode = window.location.pathname.replace('/', '').toUpperCase();
-if (pathCode && pathCode.length === 6) {
-    supabaseClient
-        .from('groups')
-        .select('*')
-        .eq('code', pathCode)
-        .single()
-        .then(({ data, error }) => {
-            if (data && !error) {
-                saveGroup(data);
-                renderMyShares();
-                showRideBoard(data);
-                window.history.replaceState({}, '', '/');
-            }
-        });
-}
