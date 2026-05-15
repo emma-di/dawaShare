@@ -157,7 +157,7 @@ document.getElementById('closeJoinModal').addEventListener('click', () => {
 });
 
 document.getElementById('joinSubmitBtn').addEventListener('click', async () => {
-    const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+    const code = document.getElementById('joinCodeInput').value.trim().toLowerCase();
     const errorEl = document.getElementById('joinError');
     const btn = document.getElementById('joinSubmitBtn');
 

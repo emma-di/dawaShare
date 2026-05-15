@@ -12,6 +12,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+
+    // making it a PWA!
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="dawaShare">
+    <meta name="theme-color" content="#8C1515">
 </head>
 <body>
 
@@ -342,7 +347,7 @@
             </div>
             <div class="modal-body">
                 <p class="modal-label">Enter your group code:</p>
-                <input type="text" id="joinCodeInput" class="code-input" placeholder="e.g. AB3X7K" maxlength="6" autocapitalize="characters">
+                <input type="text" id="joinCodeInput" class="code-input" placeholder="e.g. spring-break-2026" autocapitalize="off">
                 <p id="joinError" class="error-text"></p>
                 <button class="btn-primary full-width" id="joinSubmitBtn">Join</button>
             </div>
